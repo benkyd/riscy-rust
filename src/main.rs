@@ -1,6 +1,6 @@
-use std::io::Read;
-use std::io::BufReader;
 use std::fs::File;
+use std::io::BufReader;
+use std::io::Read;
 
 const XLEN: usize = 32;
 
@@ -40,13 +40,13 @@ impl Default for Bus {
 }
 
 struct Instruction {
-    opcode: u8,
-    rd: u8,
-    rs1: u8,
-    rs2: u8,
-    funct3: u8,
-    funct7: u8,
-    imm: u32,
+    opcode: Byte,
+    rd: Byte,
+    rs1: Byte,
+    rs2: Byte,
+    funct3: Byte,
+    funct7: Byte,
+    imm: Word,
 }
 
 struct VMRV32I {
@@ -98,6 +98,7 @@ fn main() {
     println!("VM Starting Up");
 
     let mut cpu = VMRV32I::new();
-    cpu.load_prog("test.bin");
+    cpu.load_prog("./test/test.bin");
     cpu.init_cpu();
 }
+
