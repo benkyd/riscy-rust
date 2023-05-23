@@ -5,7 +5,7 @@ use std::io::Read;
 const XLEN: usize = 32;
 
 const DRAM_SIZE: usize = 1 * 1024 * 1024 * 1024; // 1GB
-const DRAM_BASE: usize = 0x800000000;
+const DRAM_BASE: usize = 0x8000;
 
 // define words as byte fraction
 //const QUADWORD: usize = 16;
@@ -75,7 +75,8 @@ impl VMRV32I {
         let mut buffer = Vec::new();
         reader.read_to_end(&mut buffer).expect("error reading file");
 
-        print!("VM > Program size: {} bytes", buffer.len());
+        println!("VM > Program size: {} bytes", buffer.len());
+
         // put program at the base of DRAM
         for i in 0..buffer.len() {
             self.bus.memory[i + DRAM_BASE] = buffer[i];
@@ -89,6 +90,7 @@ impl VMRV32I {
         println!("-----------------");
         println!("VM > Initializing CPU");
 
+        self.bus = Bus::new();
         self.pc = DRAM_BASE as Word;
         self.x[0] = 0; // x0 is tied to ground
     }
@@ -98,7 +100,7 @@ fn main() {
     println!("VM Starting Up");
 
     let mut cpu = VMRV32I::new();
-    cpu.load_prog("./test/test.bin");
     cpu.init_cpu();
+    cpu.load_prog("./test/test.bin");
 }
 
