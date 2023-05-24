@@ -55,6 +55,8 @@ impl VMRV32I {
         }
 
         println!("VM > Program loaded to 0x{:08x}", self.pc);
+
+        println!("VM > WORD at 0x80000000: 0x{:04x}", self.bus.memory.read::<rv32::Word>(0x80000000))
     }
 
     fn init_cpu(&mut self) {
