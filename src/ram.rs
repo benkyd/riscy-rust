@@ -16,13 +16,13 @@ impl RAM {
 
     pub fn read<T>(&mut self, address: rv32::XLen) -> T
     where
-        T: std::ops::Shl<Output = T>
-            + std::ops::BitOr<Output = T>
-            + From<rv32::Byte>
-            + From<rv32::HalfWord>
-            + From<rv32::Word>
-            //+ From<rv32::DoubleWord>
+        T: num::Num
+            + num::ToPrimitive
             + Default
+            + std::fmt::LowerHex
+            + std::ops::Shl<T, Output = T>
+            + std::ops::BitOr<T, Output = T>
+            + num::cast::NumCast,
     {
         let address: usize = (address - bus::DRAM_BASE) as usize;
         let memory = &self.0;
@@ -30,10 +30,14 @@ impl RAM {
         (address..)
             .take(core::mem::size_of::<T>())
             .enumerate()
-            .fold(T::default(), |acc, (i, x)| acc | (memory[x] << (i * 8)).into())
+            .fold(T::default(), |mut acc, (i, x)| {
+                println!("VM > Reading from 0x{:08x} to 0x{:08x}", x, acc);
+                println!("VM > Memory: 0x{:02x}", memory[x]);
+                println!("VM > Now Shift: {}", i * 8);
+
+                acc << u32::from(i as u32 * 8) | memory[x].from()
+            })
     }
 
-    pub fn write<T>(&mut self, address: rv32::XLen, data: T) {
-
-    }
+    pub fn write<T>(&mut self, address: rv32::XLen, data: T) {}
 }

@@ -1,5 +1,7 @@
 use modular_bitfield::prelude::*;
 
+use crate::rv32;
+
 #[bitfield]
 pub struct RType {
     opcode: B7,
@@ -56,4 +58,15 @@ pub struct JType {
     imm_11: B1,
     imm_10_1: B10,
     imm_20: B1,
+}
+
+#[repr(align(8))]
+pub union Instruction {
+    pub inst: rv32::Word,
+    pub r: std::mem::ManuallyDrop<RType>,
+    pub i: std::mem::ManuallyDrop<IType>,
+    pub s: std::mem::ManuallyDrop<SType>,
+    pub b: std::mem::ManuallyDrop<BType>,
+    pub u: std::mem::ManuallyDrop<UType>,
+    pub j: std::mem::ManuallyDrop<JType>,
 }

@@ -1,3 +1,4 @@
+#![feature(unchecked_math)]
 use std::fs::File;
 use std::io::BufReader;
 use std::io::Read;
@@ -7,19 +8,7 @@ mod bus;
 mod ram;
 mod inst;
 
-use crate::ram::*;
 use crate::bus::*;
-
-#[repr(align(8))]
-union Instruction {
-    inst: rv32::Word,
-    r: std::mem::ManuallyDrop<inst::RType>,
-    i: std::mem::ManuallyDrop<inst::IType>,
-    s: std::mem::ManuallyDrop<inst::SType>,
-    b: std::mem::ManuallyDrop<inst::BType>,
-    u: std::mem::ManuallyDrop<inst::UType>,
-    j: std::mem::ManuallyDrop<inst::JType>,
-}
 
 struct VMRV32I {
     // 32 bi bus
@@ -55,8 +44,13 @@ impl VMRV32I {
         }
 
         println!("VM > Program loaded to 0x{:08x}", self.pc);
+    }
 
-        println!("VM > WORD at 0x80000000: 0x{:04x}", self.bus.memory.read::<rv32::Word>(0x80000000))
+    fn dump_prog(&mut self) {
+        println!("VM > Dumping program");
+        for i in 0..12 {
+            println!("VM > 0x{:08x}: 0x{:02x}", i, self.bus.memory.0[i]);
+        }
     }
 
     fn init_cpu(&mut self) {
@@ -70,11 +64,14 @@ impl VMRV32I {
         self.x[2] = self.bus.memory.len() as u32; // x2 the addressable space
     }
 
-    fn fetch(&mut self) -> Instruction {
-        Instruction { inst: 0xFFFFFFFF }
+    fn fetch(&mut self) -> inst::Instruction {
+        inst::Instruction { inst: 0xFFFFFFFF }
     }
 
     fn exec(&mut self) {
+        let val: u8 = self.bus.memory.read::<rv32::Byte>(0x80000000)
+        println!("VM > WORD at 0x80000000: 0x{:08x}", val);
+
         while self.pc > self.bus.memory.len() as u32 {
             let inst = self.fetch();
         }
@@ -87,5 +84,6 @@ fn main() {
     let mut cpu = VMRV32I::new();
     cpu.init_cpu();
     cpu.load_prog("./test/add.bin");
+    cpu.dump_prog();
     cpu.exec();
 }
