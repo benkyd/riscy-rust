@@ -2,60 +2,32 @@ use std::fs::File;
 use std::io::BufReader;
 use std::io::Read;
 
-const XLEN: usize = 32;
+mod rv32;
+mod bus;
+mod ram;
+mod inst;
 
-const DRAM_SIZE: usize = 1 * 1024 * 1024 * 1024; // 1GB
-const DRAM_BASE: usize = 0x8000;
+use crate::ram::*;
+use crate::bus::*;
 
-// define words as byte fraction
-//const QUADWORD: usize = 16;
-//const DOUBLEWORD: usize = 8;
-//const WORD: usize = 4;
-//const HALFWORD: usize = 2;
-//const BYTE: usize = 1;
-
-type QuadWord = u128;
-type DoubleWord = u64;
-type Word = u32;
-type HalfWord = u16;
-type Byte = u8;
-
-struct Bus {
-    // 1GB of memory
-    memory: Vec<Byte>,
-}
-
-impl Bus {
-    fn new() -> Bus {
-        Bus {
-            memory: vec![0; DRAM_SIZE],
-        }
-    }
-}
-
-impl Default for Bus {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-struct Instruction {
-    opcode: Byte,
-    rd: Byte,
-    rs1: Byte,
-    rs2: Byte,
-    funct3: Byte,
-    funct7: Byte,
-    imm: Word,
+#[repr(align(8))]
+union Instruction {
+    inst: rv32::Word,
+    r: std::mem::ManuallyDrop<inst::RType>,
+    i: std::mem::ManuallyDrop<inst::IType>,
+    s: std::mem::ManuallyDrop<inst::SType>,
+    b: std::mem::ManuallyDrop<inst::BType>,
+    u: std::mem::ManuallyDrop<inst::UType>,
+    j: std::mem::ManuallyDrop<inst::JType>,
 }
 
 struct VMRV32I {
     // 32 bi bus
-    bus: Bus,
+    bus: bus::Bus,
     // 32 registers
-    x: [Word; 32],
+    x: [rv32::Word; 32],
     // 32-bit program counter
-    pc: Word,
+    pc: rv32::Word,
 }
 
 impl VMRV32I {
@@ -79,7 +51,7 @@ impl VMRV32I {
 
         // put program at the base of DRAM
         for i in 0..buffer.len() {
-            self.bus.memory[i + DRAM_BASE] = buffer[i];
+            self.bus.memory.0[i] = buffer[i];
         }
 
         println!("VM > Program loaded to 0x{:08x}", self.pc);
@@ -91,8 +63,19 @@ impl VMRV32I {
         println!("VM > Initializing CPU");
 
         self.bus = Bus::new();
-        self.pc = DRAM_BASE as Word;
-        self.x[0] = 0; // x0 is tied to ground
+        self.pc = DRAM_BASE as rv32::Word;
+        self.x[0] = 0x00000000; // x0 is tied to ground
+        self.x[2] = self.bus.memory.len() as u32; // x2 the addressable space
+    }
+
+    fn fetch(&mut self) -> Instruction {
+        Instruction { inst: 0xFFFFFFFF }
+    }
+
+    fn exec(&mut self) {
+        while self.pc > self.bus.memory.len() as u32 {
+            let inst = self.fetch();
+        }
     }
 }
 
@@ -101,6 +84,6 @@ fn main() {
 
     let mut cpu = VMRV32I::new();
     cpu.init_cpu();
-    cpu.load_prog("./test/test.bin");
+    cpu.load_prog("./test/add.bin");
+    cpu.exec();
 }
-
