@@ -65,24 +65,16 @@ impl VMRV32I {
     }
 
     fn fetch(&mut self) -> inst::Instruction {
-        inst::Instruction { inst: 0xFFFFFFFF }
+        inst::Instruction { inst: self.bus.load_32(self.pc) }
     }
 
     fn exec(&mut self) {
-        let val: u8 = self.bus.memory.read_8(0x80000000);
-        println!("VM > BYTE  at 0x80000000: 0x{:02x}", val);
-        let val = self.bus.memory.read_16(0x80000000);
-        println!("VM > HWORD at 0x80000000: 0x{:04x}", val);
-        let val = self.bus.memory.read_32(0x80000000);
-        println!("VM > WORD  at 0x80000000: 0x{:08x}", val);
-        let val = self.bus.memory.read_64(0x80000000);
-        println!("VM > DWORD at 0x80000000: 0x{:016x}", val);
-
-        let val = self.bus.load_8(0x7FFFFFFF);
-        println!("VM > BYTE  at 0x80000000: 0x{:02x}", val);
-
         while self.pc > self.bus.memory.len() as u32 {
             let inst = self.fetch();
+            println!("VM > Fetched 0x{:08x}: 0x{:08x}", self.pc, unsafe {inst.inst});
+
+            self.pc = self.pc + rv32::WORD as u32;
+            self.x[0] = 0x00000000;
         }
     }
 }
