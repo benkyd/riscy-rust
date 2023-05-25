@@ -14,30 +14,68 @@ impl RAM {
         self.0.len()
     }
 
-    pub fn read<T>(&mut self, address: rv32::XLen) -> T
-    where
-        T: num::Num
-            + num::ToPrimitive
-            + Default
-            + std::fmt::LowerHex
-            + std::ops::Shl<T, Output = T>
-            + std::ops::BitOr<T, Output = T>
-            + num::cast::NumCast,
-    {
-        let address: usize = (address - bus::DRAM_BASE) as usize;
+    pub fn read_8(&mut self, address: rv32::XLen) -> rv32::Byte {
         let memory = &self.0;
-
-        (address..)
-            .take(core::mem::size_of::<T>())
-            .enumerate()
-            .fold(T::default(), |mut acc, (i, x)| {
-                println!("VM > Reading from 0x{:08x} to 0x{:08x}", x, acc);
-                println!("VM > Memory: 0x{:02x}", memory[x]);
-                println!("VM > Now Shift: {}", i * 8);
-
-                acc << u32::from(i as u32 * 8) | memory[x].from()
-            })
+        let address = (address - bus::DRAM_BASE) as usize;
+        memory[address]
     }
 
-    pub fn write<T>(&mut self, address: rv32::XLen, data: T) {}
+    pub fn read_16(&mut self, address: rv32::XLen) -> rv32::HalfWord {
+        let memory = &self.0;
+        let address = (address - bus::DRAM_BASE) as usize;
+        let ret: rv32::HalfWord =
+            memory[address] as rv32::HalfWord | (memory[address + 1] as rv32::HalfWord) << 8;
+        ret
+    }
+
+    pub fn read_32(&mut self, address: rv32::XLen) -> rv32::Word {
+        let memory = &self.0;
+        let address = (address - bus::DRAM_BASE) as usize;
+        let ret: rv32::Word = memory[address] as rv32::Word
+            | (memory[address + 1] as rv32::Word) << 8
+            | (memory[address + 2] as rv32::Word) << 16
+            | (memory[address + 3] as rv32::Word) << 24;
+        ret
+    }
+
+    pub fn read_64(&mut self, address: rv32::XLen) -> rv32::DoubleWord {
+        let memory = &self.0;
+        let address = (address - bus::DRAM_BASE) as usize;
+        let ret: rv32::DoubleWord = memory[address] as rv32::DoubleWord
+            | (memory[address + 1] as rv32::DoubleWord) << 8
+            | (memory[address + 2] as rv32::DoubleWord) << 16
+            | (memory[address + 3] as rv32::DoubleWord) << 24
+            | (memory[address + 4] as rv32::DoubleWord) << 32
+            | (memory[address + 5] as rv32::DoubleWord) << 40
+            | (memory[address + 6] as rv32::DoubleWord) << 48
+            | (memory[address + 7] as rv32::DoubleWord) << 56;
+        ret
+    }
+
+    //pub fn read<T>(&mut self, address: rv32::XLen) -> T
+    //where
+    //T: num::Num
+    //+ num::ToPrimitive
+    //+ Default
+    //+ std::fmt::LowerHex
+    //+ std::ops::Shl<T, Output = T>
+    //+ std::ops::BitOr<T, Output = T>
+    //+ num::cast::NumCast,
+    //{
+    //let address: usize = (address - bus::DRAM_BASE) as usize;
+    //let memory = &self.0;
+
+    //(address..)
+    //.take(core::mem::size_of::<T>())
+    //.enumerate()
+    //.fold(T::default(), |mut acc, (i, x)| {
+    //println!("VM > Reading from 0x{:08x} to 0x{:08x}", x, acc);
+    //println!("VM > Memory: 0x{:02x}", memory[x]);
+    //println!("VM > Now Shift: {}", i * 8);
+
+    //acc << u32::from(i as u32 * 8) | memory[x].from()
+    //})
+    //}
+
+    //pub fn write<T>(&mut self, address: rv32::XLen, data: T) {}
 }

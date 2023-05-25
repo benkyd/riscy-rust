@@ -47,7 +47,7 @@ impl VMRV32I {
     }
 
     fn dump_prog(&mut self) {
-        println!("VM > Dumping program");
+        println!("VM > Dumping program (virtual addresses)");
         for i in 0..12 {
             println!("VM > 0x{:08x}: 0x{:02x}", i, self.bus.memory.0[i]);
         }
@@ -69,8 +69,17 @@ impl VMRV32I {
     }
 
     fn exec(&mut self) {
-        let val: u8 = self.bus.memory.read::<rv32::Byte>(0x80000000)
-        println!("VM > WORD at 0x80000000: 0x{:08x}", val);
+        let val: u8 = self.bus.memory.read_8(0x80000000);
+        println!("VM > BYTE  at 0x80000000: 0x{:02x}", val);
+        let val = self.bus.memory.read_16(0x80000000);
+        println!("VM > HWORD at 0x80000000: 0x{:04x}", val);
+        let val = self.bus.memory.read_32(0x80000000);
+        println!("VM > WORD  at 0x80000000: 0x{:08x}", val);
+        let val = self.bus.memory.read_64(0x80000000);
+        println!("VM > DWORD at 0x80000000: 0x{:016x}", val);
+
+        let val = self.bus.load_8(0x7FFFFFFF);
+        println!("VM > BYTE  at 0x80000000: 0x{:02x}", val);
 
         while self.pc > self.bus.memory.len() as u32 {
             let inst = self.fetch();
