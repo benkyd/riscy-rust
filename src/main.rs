@@ -70,10 +70,16 @@ impl VMRV32I {
 
     fn exec(&mut self) {
         while self.pc > self.bus.memory.len() as u32 {
+            // fetch
             let inst = self.fetch();
             println!("VM > Fetched 0x{:08x}: 0x{:08x}", self.pc, unsafe {inst.inst});
-
             self.pc = self.pc + rv32::WORD as u32;
+
+            //decode
+
+            // exec
+            
+
             self.x[0] = 0x00000000;
         }
     }

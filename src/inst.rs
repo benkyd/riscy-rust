@@ -2,6 +2,7 @@ use modular_bitfield::prelude::*;
 
 use crate::rv32;
 
+// Arithmetic logic
 #[bitfield]
 pub struct RType {
     opcode: B7,
@@ -12,6 +13,7 @@ pub struct RType {
     funct7: B7,
 }
 
+// Loads & immeiate arithmetic
 #[bitfield]
 pub struct IType {
     opcode: B7,
@@ -21,6 +23,7 @@ pub struct IType {
     imm: B12,
 }
 
+// Stores
 #[bitfield]
 pub struct SType {
     opcode: B7,
@@ -31,6 +34,7 @@ pub struct SType {
     imm_h: B7,
 }
 
+// Conditional jump
 #[bitfield]
 pub struct BType {
     opcode: B7,
@@ -43,6 +47,7 @@ pub struct BType {
     imm_12: B1,
 }
 
+// Upper immediate
 #[bitfield]
 pub struct UType {
     opcode: B7,
@@ -50,6 +55,8 @@ pub struct UType {
     imm: B20,
 }
 
+
+// Unconditional jump
 #[bitfield]
 pub struct JType {
     opcode: B7,
