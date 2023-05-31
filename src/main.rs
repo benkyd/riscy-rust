@@ -3,10 +3,10 @@ use std::fs::File;
 use std::io::BufReader;
 use std::io::Read;
 
-mod rv32;
 mod bus;
-mod ram;
 mod inst;
+mod ram;
+mod rv32;
 
 use crate::bus::*;
 
@@ -65,20 +65,23 @@ impl VMRV32I {
     }
 
     fn fetch(&mut self) -> inst::Instruction {
-        inst::Instruction { inst: self.bus.load_32(self.pc) }
+        inst::Instruction {
+            inst: self.bus.load_32(self.pc),
+        }
     }
 
     fn exec(&mut self) {
         while self.pc > self.bus.memory.len() as u32 {
             // fetch
             let inst = self.fetch();
-            println!("VM > Fetched 0x{:08x}: 0x{:08x}", self.pc, unsafe {inst.inst});
+            println!("VM > Fetched 0x{:08x}: 0x{:08x}", self.pc, unsafe {
+                inst.inst
+            });
             self.pc = self.pc + rv32::WORD as u32;
 
             //decode
 
             // exec
-            
 
             self.x[0] = 0x00000000;
         }
