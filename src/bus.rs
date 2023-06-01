@@ -4,7 +4,7 @@ use crate::rv32;
 use crate::ram;
 
 pub struct Bus {
-    pub memory: ram::RAM,
+    memory: ram::RAM,
 }
 
 impl Bus {
@@ -56,6 +56,44 @@ impl Bus {
             _ => {
                 println!("VM > BUS > Peripheral at 0x{:08x} does not exist", address);
                 rv32::DoubleWord::default()
+            },
+        }
+    }
+
+    pub fn store_8(&mut self, address: rv32::XLen, data: rv32::Byte) {
+        match address {
+            DRAM_BASE.. => {
+                self.memory.write_8(address, data)
+            },
+            _ => {
+                println!("VM > BUS > Peripheral at 0x{:08x} does not exist", address);
+            },
+        }
+    }
+
+
+    pub fn store_16(&mut self, address: rv32::XLen, data: rv32::HalfWord) {
+        match address {
+            _ => {
+                println!("VM > BUS > Peripheral at 0x{:08x} does not exist", address);
+            },
+        }
+    }
+
+
+    pub fn store_32(&mut self, address: rv32::XLen, data: rv32::Word) {
+        match address {
+            _ => {
+                println!("VM > BUS > Peripheral at 0x{:08x} does not exist", address);
+            },
+        }
+    }
+
+
+    pub fn store_64(&mut self, address: rv32::XLen, data: rv32::DoubleWord) {
+        match address {
+            _ => {
+                println!("VM > BUS > Peripheral at 0x{:08x} does not exist", address);
             },
         }
     }
