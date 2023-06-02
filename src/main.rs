@@ -10,7 +10,7 @@ mod rv32;
 use crate::bus::*;
 
 // Register ABI         Description             Saver
-// x0       zero        Zero                    constant —
+// x0       zero        Zero                    Immutable
 // x1       ra          Return address          Callee
 // x2       sp          Stack pointer           Callee
 // x3       gp          Global pointer          —
@@ -24,11 +24,8 @@ use crate::bus::*;
 // x18-x27  s2-s11      Saved registers         Callee
 // x28-x31  t3-t6       Temporaries             Caller
 struct VMRV32I {
-    // 32 bi bus
     bus: bus::Bus,
-    // 32 registers
     x: [rv32::Word; 32],
-    // 32-bit program counter
     pc: rv32::Word,
 }
 
@@ -100,7 +97,7 @@ impl VMRV32I {
     }
 
     fn exec(&mut self) {
-        while self.pc > ram::DRAM_SIZE as u32 {
+        while self.pc - bus::DRAM_BASE < ram::DRAM_SIZE as u32 {
             // fetch
             let inst = self.fetch();
             println!("VM > Fetched 0x{:08x}: 0x{:08x}", self.pc, unsafe {
