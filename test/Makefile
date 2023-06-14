@@ -1,7 +1,7 @@
 GCC_COMPILER=riscv32-unknown-elf-gcc
 GCC_OBJCOPY=riscv32-unknown-elf-objcopy
 
-all: build
+all: bin
 
 assemble:
 	$(GCC_COMPILER) -S test.c
@@ -9,7 +9,7 @@ assemble:
 build:
 	$(GCC_COMPILER) -Wl,-Ttext=0x0 -nostdlib -march=rv64i -mabi=lp64 -o test test.S
 
-bin:
+bin: build
 	$(GCC_OBJCOPY) -O binary test test.bin
 
 clean:

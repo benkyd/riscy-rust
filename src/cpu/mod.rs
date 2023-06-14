@@ -91,6 +91,9 @@ impl CPU {
                         _ => println!("VM > INST {:03b} not implemented", inst.funct3()),
                     }
                 }
+                inst::S_TYPE => {
+                    println!("VM > OPCODE S TYPE not implemented");
+                }
                 _ => println!("VM > OPCODE {:08b} not implemented", opcode),
             };
 
