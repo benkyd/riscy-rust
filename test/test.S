@@ -1,6 +1,5 @@
-ADDI x2, x0, 1
+jal x0, main
 
-loop:
-   SUB x1, x1, x2
-   SW  x1, 4(x0) 
-   BLT x0, x1, loop
+main:
+    addi t0, x0, 100
+    sb t0, 8(sp)
