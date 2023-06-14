@@ -1,7 +1,7 @@
-use std::{cell::RefCell, rc::Rc};
 use std::fs::File;
 use std::io::BufReader;
 use std::io::Read;
+use std::{cell::RefCell, rc::Rc};
 
 mod bus;
 mod cpu;
@@ -11,7 +11,6 @@ mod rv32;
 
 use crate::bus::*;
 use crate::cpu::*;
-
 
 struct VMRV32I {
     bus: Rc<RefCell<bus::Bus>>,
@@ -38,7 +37,9 @@ impl VMRV32I {
 
         // put program at the base of DRAM
         for i in 0..buffer.len() {
-            self.bus.borrow_mut().store_8(i as u32 + bus::DRAM_BASE, buffer[i]);
+            self.bus
+                .borrow_mut()
+                .store_8(i as u32 + bus::DRAM_BASE, buffer[i]);
         }
 
         println!("VM > Program loaded to 0x{:08x}", self.cpu.get_pc());
@@ -47,11 +48,13 @@ impl VMRV32I {
     fn dump_prog(&mut self) {
         println!("VM > Dumping program (virtual addresses)");
         for i in 0..12 {
-            println!(
-                "VM > 0x{:08x}: 0x{:02x}",
-                i,
-                self.bus.borrow_mut().load_8(i + bus::DRAM_BASE)
-            );
+            if i % 4 == 0 {
+                println!(
+                    "VM > 0x{:08x}: 0x{:08x}",
+                    i,
+                    self.bus.borrow_mut().load_32(i + bus::DRAM_BASE)
+                );
+            }
         }
     }
 
