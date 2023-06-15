@@ -1,7 +1,7 @@
 pub const DRAM_BASE: u32 = 0x80000000;
 
-use crate::rv32;
-use crate::ram;
+use crate::system::rv32;
+use crate::system::ram;
 
 pub struct Bus {
     memory: ram::RAM,

@@ -3,13 +3,12 @@ use std::io::BufReader;
 use std::io::Read;
 use std::{cell::RefCell, rc::Rc};
 
-mod bus;
 mod cpu;
+mod ext;
+mod system;
 mod inst;
-mod ram;
-mod rv32;
 
-use crate::bus::*;
+use crate::system::bus;
 use crate::cpu::*;
 
 struct VMRV32I {
@@ -19,7 +18,7 @@ struct VMRV32I {
 
 impl VMRV32I {
     fn new() -> VMRV32I {
-        let bus = Rc::new(RefCell::new(Bus::new()));
+        let bus = Rc::new(RefCell::new(bus::Bus::new()));
         let mut cpu = CPU::new(Rc::clone(&bus));
         cpu.init();
         VMRV32I { cpu, bus }

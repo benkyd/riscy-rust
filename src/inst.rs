@@ -1,6 +1,6 @@
 use modular_bitfield::prelude::*;
 
-use crate::rv32;
+use crate::system::rv32;
 
 pub const R_TYPE: u8 = 0b00110011;
 pub const I_TYPE: u8 = 0b00010011;

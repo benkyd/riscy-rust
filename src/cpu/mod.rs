@@ -1,8 +1,8 @@
 use std::{cell::RefCell, rc::Rc};
-use crate::bus::*;
-use crate::ram;
+use crate::system::bus::*;
+use crate::system::ram;
+use crate::system::rv32;
 use crate::inst;
-use crate::rv32;
 
 // Register ABI         Description             Saver
 // x0       zero        Zero                    Immutable
