@@ -66,7 +66,7 @@ fn main() {
     println!("VM Starting Up");
 
     let mut vm = VMRV32I::new();
-    vm.load_prog("./test/test.bin");
+    vm.load_prog("./test/add.bin");
     vm.dump_prog();
     vm.dispatch();
 }

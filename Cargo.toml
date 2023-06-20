@@ -3,6 +3,9 @@ name = "riscy-rust"
 version = "0.1.0"
 edition = "2021"
 
+[dependencies.bits]
+path = "lib/bits"
+
 [dependencies]
 modular-bitfield = "0.11.2"
 num = "0.4.0"

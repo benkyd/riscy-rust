@@ -1,36 +1,35 @@
+use bits::match_mask;
+
 use crate::system::rv32;
 use crate::cpu;
 
-macro_rules! match_mask {
-    ($int:expr, $($bit:expr)+) => { 'scope: {
-        let mut int = $int;
-
-        $({
-            let msb = int & (1 << 31);
-            let bit = $bit;
-            if (bit == 0 || bit == 1) && bit != msb.reverse_bits() {
-                break 'scope false;
-            }
-            int <<= 1;
-        })+
-
-        true
-    }};
-}
-
 trait Instruction {
-    fn get_mask() -> rv32::Word;
+    fn match_inst(inst: rv32::Word) -> bool;
     fn step(&self, inst: rv32::Word, state: &mut cpu::CPU);
 }
 
-struct ADDI {}
+struct ADDI;
 impl Instruction for ADDI  {
-    fn get_mask() -> rv32::Word {
+    fn match_inst(inst: rv32::Word) -> bool {
+        match_mask!(inst, "xxxxxxxxxxxxxxxxxx000xxxx0010011")
+    }
+
+    fn step(&self, inst: rv32::Word, state: &mut cpu::CPU) {
     }
 }
 
-pub fn decode_inst(inst: rv32::WORD) -> fn() {
-    // loop over all bitmasks
-    // 
 
+#[derive(Clone, Copy)]
+enum I {
+    ADDI(ADDI),
+}
+
+#[derive(Clone, Copy)]
+enum Extensions {
+    I,
+}
+
+pub fn decode_inst(inst: rv32::Word) -> fn() {
+    // we need to go over every instruction and see if it matches
+    // we can do smarter things with cacheing later - this aint blazin
 }
