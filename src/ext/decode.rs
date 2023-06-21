@@ -33,7 +33,7 @@ use crate::cpu;
 #[derive(Debug)]
 pub struct NullType {
     pub opcode: B7,
-    pub _undefined: B25,
+    pub _unused: B25,
 }
 
 // Arithmetic logic
@@ -75,7 +75,7 @@ pub union GenInstruction {
 
 trait Instruction {
     fn register(&self, ext: &mut Extension) where Self: Sized {
-        ext.register(Box::new(self));
+        // ext.register(Box::new(self));
     }
     fn decode(&self);
     fn match_inst(&self, inst: rv32::Word) -> bool;
