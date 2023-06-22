@@ -5,6 +5,7 @@ use std::{cell::RefCell, rc::Rc};
 
 mod cpu;
 mod ext;
+mod err;
 mod system;
 mod inst;
 
