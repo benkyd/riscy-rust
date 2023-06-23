@@ -75,10 +75,9 @@ pub union GenInstruction {
 
 trait Instruction {
     fn register(&self, ext: &mut Extension) where Self: Sized {
-        // ext.register(Box::new(self));
     }
-    fn decode(&self);
     fn match_inst(&self, inst: rv32::Word) -> bool;
+    fn decode(&self);
     fn step(&self, inst: rv32::Word, state: &mut cpu::CPU);
 }
 
@@ -90,12 +89,12 @@ impl ADDI {
     }
 }
 impl Instruction for ADDI  {
-    fn decode(&self) {
-
-    }
-
     fn match_inst(&self, inst: rv32::Word) -> bool {
         match_mask!(inst, "xxxxxxxxxxxxxxxxxx000xxxx0010011")
+    }
+
+    fn decode(&self) {
+
     }
 
     fn step(&self, inst: rv32::Word, state: &mut cpu::CPU) {
