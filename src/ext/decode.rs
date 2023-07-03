@@ -74,12 +74,12 @@ pub union GenInstruction {
 }
 
 trait Instruction {
-    fn register(&self, ext: &mut Extension) where Self: Sized {
-    }
     fn match_inst(&self, inst: rv32::Word) -> bool;
     fn decode(&self);
     fn step(&self, inst: rv32::Word, state: &mut cpu::CPU);
 }
+
+type SomeInstruction = impl Instruction;
 
 #[derive(Copy, Clone)]
 struct ADDI;
@@ -88,31 +88,41 @@ impl ADDI {
         ADDI
     }
 }
+
 impl Instruction for ADDI  {
     fn match_inst(&self, inst: rv32::Word) -> bool {
         match_mask!(inst, "xxxxxxxxxxxxxxxxxx000xxxx0010011")
     }
 
     fn decode(&self) {
-
     }
 
     fn step(&self, inst: rv32::Word, state: &mut cpu::CPU) {
     }
 }
 
+#[derive(Copy, Clone)]
+struct ADD;
+impl ADD {
+    fn new() -> ADD {
+        ADD
+    }
+}
 
-trait GenExtension {
-    fn register(&mut self, inst: Box<dyn Instruction>) {
+impl Instruction for ADD  {
+    fn match_inst(&self, inst: rv32::Word) -> bool {
+        match_mask!(inst, "0000000xxxxxxxxxxx000xxxx0110011")
+    }
+
+    fn decode(&self) {
+    }
+
+    fn step(&self, inst: rv32::Word, state: &mut cpu::CPU) {
     }
 }
 
 struct Extension {
-    instruction_set: Vec<Box<dyn Instruction>>,
-}
-
-impl GenExtension for Extension {
-
+    instruction_set: Vec<SomeInstruction>,
 }
 
 impl Extension {
@@ -121,20 +131,48 @@ impl Extension {
             instruction_set: Vec::new(),
         }
     }
-}
 
-struct ExtensionI;
-impl GenExtension for ExtensionI {
+    pub fn register_inst(&mut self, inst: SomeInstruction) {
+        self.instruction_set.push(inst);
+    }
 
-}
-
-pub fn load_extensions(ext: Vec<char>) {
-    for extension in ext {
-
+    pub fn match_inst(&self, inst: rv32::Word) -> Option<SomeInstruction> {
+        match self.instruction_set.iter().find(|instruction| instruction.match_inst(inst)) {
+            Some(instruction) => Some(instruction),
+            None => None
+        }
     }
 }
 
-// pub fn decode_inst(inst: rv32::Word) -> fn() {
-//     // we need to go over every instruction and see if it matches
-//     // we can do smarter things with cacheing later - this aint blazin
-// }
+pub struct DecodeCycle {
+    extensions: Vec<Extension>,
+}
+
+impl DecodeCycle {
+    pub fn new(&mut self, ext: Vec<char>) {
+        for extension in ext {
+            match extension {
+                'i' => {
+                    let ext = Extension::new();
+                    // let instructions = vec![ADDI, ADD];
+                    // self.extensions.push();
+                }
+                _ => {
+                    println!("VM > Unknown Extension '{}'", extension);
+                }
+            }
+        }
+    }
+
+    pub fn decode_inst(&self, inst: rv32::Word) -> Option<SomeInstruction> {
+        // we need to go over every instruction and see if it matches
+        // we can do smarter things with cacheing later - this aint blazin
+        for extension in &self.extensions {
+            match extension.match_inst(inst) {
+                Some(inst) => return Some(inst),
+                None => continue,
+            };
+        };
+        None
+    }
+}

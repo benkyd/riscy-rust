@@ -1,3 +1,6 @@
+#![feature(type_alias_impl_trait)]
+#![feature(return_position_impl_trait_in_trait)]
+
 use std::fs::File;
 use std::io::BufReader;
 use std::io::Read;
