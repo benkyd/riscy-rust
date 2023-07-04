@@ -75,7 +75,6 @@ pub union GenInstruction {
 
 trait Instruction {
     fn match_inst(&self, inst: rv32::Word) -> bool;
-    fn decode(&self);
     fn step(&self, inst: rv32::Word, state: &mut cpu::CPU);
 }
 
@@ -83,18 +82,10 @@ type SomeInstruction = impl Instruction;
 
 #[derive(Copy, Clone)]
 struct ADDI;
-impl ADDI {
-    fn new() -> ADDI {
-        ADDI
-    }
-}
 
 impl Instruction for ADDI  {
     fn match_inst(&self, inst: rv32::Word) -> bool {
         match_mask!(inst, "xxxxxxxxxxxxxxxxxx000xxxx0010011")
-    }
-
-    fn decode(&self) {
     }
 
     fn step(&self, inst: rv32::Word, state: &mut cpu::CPU) {
@@ -103,18 +94,10 @@ impl Instruction for ADDI  {
 
 #[derive(Copy, Clone)]
 struct ADD;
-impl ADD {
-    fn new() -> ADD {
-        ADD
-    }
-}
 
 impl Instruction for ADD  {
     fn match_inst(&self, inst: rv32::Word) -> bool {
         match_mask!(inst, "0000000xxxxxxxxxxx000xxxx0110011")
-    }
-
-    fn decode(&self) {
     }
 
     fn step(&self, inst: rv32::Word, state: &mut cpu::CPU) {
