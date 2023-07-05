@@ -1,8 +1,9 @@
-use modular_bitfield::prelude::*;
 use bits::match_mask;
+use enum_dispatch::*;
+use modular_bitfield::prelude::*;
 
-use crate::system::rv32;
 use crate::cpu;
+use crate::system::rv32;
 
 // trait Instruction {
 //   fn impl_register(&self, exts: &mut Vec<Extension>, name: &'static str) {
@@ -59,7 +60,6 @@ pub struct IType {
     pub imm: B12,
 }
 
-
 enum EncodingType {
     R(RType),
     I(IType),
@@ -73,62 +73,48 @@ pub union GenInstruction {
     pub I: std::mem::ManuallyDrop<IType>,
 }
 
+#[enum_dispatch]
 trait Instruction {
     fn match_inst(&self, inst: rv32::Word) -> bool;
     fn step(&self, inst: rv32::Word, state: &mut cpu::CPU);
 }
 
-type SomeInstruction = impl Instruction;
-
 #[derive(Copy, Clone)]
 struct ADDI;
 
-impl Instruction for ADDI  {
+impl Instruction for ADDI {
     fn match_inst(&self, inst: rv32::Word) -> bool {
         match_mask!(inst, "xxxxxxxxxxxxxxxxxx000xxxx0010011")
     }
 
     fn step(&self, inst: rv32::Word, state: &mut cpu::CPU) {
+        // self.x[inst.rd() as usize] = self.x[inst.rs1() as usize].wrapping_add(inst.imm() as u32);
     }
 }
 
 #[derive(Copy, Clone)]
 struct ADD;
 
-impl Instruction for ADD  {
+impl Instruction for ADD {
     fn match_inst(&self, inst: rv32::Word) -> bool {
         match_mask!(inst, "0000000xxxxxxxxxxx000xxxx0110011")
     }
 
-    fn step(&self, inst: rv32::Word, state: &mut cpu::CPU) {
-    }
+    fn step(&self, inst: rv32::Word, state: &mut cpu::CPU) {}
 }
 
-struct Extension {
-    instruction_set: Vec<SomeInstruction>,
+#[enum_dispatch(Instruction)]
+enum ExtensionI {
+    ADDI(ADDI),
+    ADD(ADD),
 }
 
-impl Extension {
-    fn new() -> Extension {
-        Extension {
-            instruction_set: Vec::new(),
-        }
-    }
-
-    pub fn register_inst(&mut self, inst: SomeInstruction) {
-        self.instruction_set.push(inst);
-    }
-
-    pub fn match_inst(&self, inst: rv32::Word) -> Option<SomeInstruction> {
-        match self.instruction_set.iter().find(|instruction| instruction.match_inst(inst)) {
-            Some(instruction) => Some(instruction),
-            None => None
-        }
-    }
+enum Extensions {
+    ExtensionI(Option<ExtensionI>),
 }
 
 pub struct DecodeCycle {
-    extensions: Vec<Extension>,
+    extensions: Vec<Extensions>,
 }
 
 impl DecodeCycle {
@@ -136,9 +122,7 @@ impl DecodeCycle {
         for extension in ext {
             match extension {
                 'i' => {
-                    let ext = Extension::new();
-                    // let instructions = vec![ADDI, ADD];
-                    // self.extensions.push();
+                    self.extensions.push(Extensions::ExtensionI(None));
                 }
                 _ => {
                     println!("VM > Unknown Extension '{}'", extension);
@@ -147,7 +131,7 @@ impl DecodeCycle {
         }
     }
 
-    pub fn decode_inst(&self, inst: rv32::Word) -> Option<SomeInstruction> {
+    pub fn decode_inst(&self, inst: rv32::Word) -> Option<Instruction> {
         // we need to go over every instruction and see if it matches
         // we can do smarter things with cacheing later - this aint blazin
         for extension in &self.extensions {
