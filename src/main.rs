@@ -13,19 +13,25 @@ mod system;
 mod inst;
 
 use crate::system::bus;
+use crate::ext::decode;
 use crate::cpu::*;
 
 struct VMRV32I {
     bus: Rc<RefCell<bus::Bus>>,
     cpu: cpu::CPU,
+    instruction_decoder: Rc<RefCell<decode::DecodeCycle>>,
 }
 
 impl VMRV32I {
     fn new() -> VMRV32I {
+        let extensions = vec!['i'];
+
         let bus = Rc::new(RefCell::new(bus::Bus::new()));
-        let mut cpu = CPU::new(Rc::clone(&bus));
+        let instruction_decoder = Rc::new(RefCell::new(decode::DecodeCycle::new(extensions)));
+        let mut cpu = CPU::new(Rc::clone(&bus), Rc::clone(&instruction_decoder));
+
         cpu.init();
-        VMRV32I { cpu, bus }
+        VMRV32I { cpu, bus, instruction_decoder }
     }
 
     fn load_prog(&mut self, file: &str) {
@@ -62,7 +68,10 @@ impl VMRV32I {
     }
 
     fn dispatch(&mut self) {
-        self.cpu.exec();
+        match self.cpu.exec() {
+            Ok(_) => println!("VM > Program exited peacefully"),
+            Err(e) => println!("VM > Program exited violently with error: {}", e),
+        }
     }
 }
 

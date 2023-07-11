@@ -1,5 +1,6 @@
 use bits::match_mask;
 use enum_dispatch::*;
+use strum::{IntoEnumIterator, EnumIter};
 use modular_bitfield::prelude::*;
 
 use crate::cpu;
@@ -75,35 +76,56 @@ pub union GenInstruction {
 
 #[enum_dispatch]
 trait Instruction {
+    fn name(&self) -> &'static str;
     fn match_inst(&self, inst: rv32::Word) -> bool;
-    fn step(&self, inst: rv32::Word, state: &mut cpu::CPU);
+    fn step(&self, inst: rv32::Word, state: &mut cpu::CPUState);
 }
 
-#[derive(Copy, Clone)]
+#[derive(Default, Copy, Clone)]
 struct ADDI;
 
 impl Instruction for ADDI {
+    fn name(&self) -> &'static str {
+        "ADDI"
+    }
+
     fn match_inst(&self, inst: rv32::Word) -> bool {
+        println!("VM > Checking ADDI");
+        println!("VM > ADDI: 0b{:032b}", inst);
+        println!("VM > ADDI: 0bxxxxxxxxxxxxxxxxxx000xxxx0010011");
         match_mask!(inst, "xxxxxxxxxxxxxxxxxx000xxxx0010011")
     }
 
-    fn step(&self, inst: rv32::Word, state: &mut cpu::CPU) {
+    fn step(&self, inst: rv32::Word, state: &mut cpu::CPUState) {
+        println!("VM > Decoded I Type instruction 0x{:08x}", inst);
+        println!("VM > Executing ADDI");
         // self.x[inst.rd() as usize] = self.x[inst.rs1() as usize].wrapping_add(inst.imm() as u32);
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Default, Copy, Clone)]
 struct ADD;
 
 impl Instruction for ADD {
+    fn name(&self) -> &'static str {
+        "ADD"
+    }
+
     fn match_inst(&self, inst: rv32::Word) -> bool {
+        println!("VM > Checking ADD");
+        println!("VM > ADD: 0b{:032b}", inst);
+        println!("VM > ADD: 0b0000000xxxxxxxxxxx000xxxx0110011");
         match_mask!(inst, "0000000xxxxxxxxxxx000xxxx0110011")
     }
 
-    fn step(&self, inst: rv32::Word, state: &mut cpu::CPU) {}
+    fn step(&self, inst: rv32::Word, state: &mut cpu::CPUState) {
+        println!("VM > Decoded R Type instruction 0x{:08x}", inst);
+        println!("VM > Executing ADD");
+    }
 }
 
 #[enum_dispatch(Instruction)]
+#[derive(EnumIter)]
 enum ExtensionI {
     ADDI(ADDI),
     ADD(ADD),
@@ -114,32 +136,37 @@ enum Extensions {
 }
 
 pub struct DecodeCycle {
-    extensions: Vec<Extensions>,
+    extensions: Vec<char>,
 }
 
 impl DecodeCycle {
-    pub fn new(&mut self, ext: Vec<char>) {
-        for extension in ext {
+    pub fn new(ext: Vec<char>) -> DecodeCycle {
+        DecodeCycle { extensions: ext }
+    }
+
+    pub fn decode_exec_inst(&self, inst: rv32::Word, state: &mut cpu::CPUState) -> Result<(), String> {
+        // we want to go through each extension and then go through each instruction in that extension
+        // if we find a match, we want to execute it
+        // if we don't find a match, we want to return an error
+
+        for extension in self.extensions.iter() {
             match extension {
                 'i' => {
-                    self.extensions.push(Extensions::ExtensionI(None));
+                    println!("VM > Attempting to decode instruction as I extension: 0x{:08x}", inst);
+                    for instruction in ExtensionI::iter() {
+                        println!("VM > Checking instruction: {:?}", instruction.name());
+                        if instruction.match_inst(inst) {
+                            println!("VM > Decoded instruction as I extension: 0x{:08x}", inst);
+                            instruction.step(inst, state);
+                            return Ok(());
+                        }
+                    }
                 }
                 _ => {
-                    println!("VM > Unknown Extension '{}'", extension);
+                    println!("VM > Unknown Extension");
                 }
             }
         }
-    }
-
-    pub fn decode_inst(&self, inst: rv32::Word) -> Option<Instruction> {
-        // we need to go over every instruction and see if it matches
-        // we can do smarter things with cacheing later - this aint blazin
-        for extension in &self.extensions {
-            match extension.match_inst(inst) {
-                Some(inst) => return Some(inst),
-                None => continue,
-            };
-        };
-        None
-    }
+        Ok(())
+   }
 }
