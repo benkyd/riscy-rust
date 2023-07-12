@@ -9,8 +9,8 @@ use std::{cell::RefCell, rc::Rc};
 mod cpu;
 mod err;
 mod ext;
-mod inst;
 mod system;
+mod helpers;
 
 use crate::cpu::*;
 use crate::ext::decode;
@@ -24,7 +24,7 @@ struct VMRV32I {
 
 impl VMRV32I {
     fn new() -> VMRV32I {
-        let extensions = vec!['i', 'm'];
+        let extensions = vec!['i'];
 
         let bus = Rc::new(RefCell::new(bus::Bus::new()));
         let instruction_decoder = Rc::new(RefCell::new(decode::DecodeCycle::new(extensions.clone())));
@@ -83,7 +83,7 @@ fn main() {
     println!("VM Starting Up");
 
     let mut vm = VMRV32I::new();
-    vm.load_prog("./test/add.bin");
+    vm.load_prog("./test/test.bin");
     vm.dump_prog();
     vm.dispatch();
 }
