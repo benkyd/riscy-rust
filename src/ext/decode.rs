@@ -92,8 +92,8 @@ impl Instruction for ADDI {
     fn match_inst(&self, inst: rv32::Word) -> bool {
         println!("VM > Checking ADDI");
         println!("VM > ADDI: 0b{:032b}", inst);
-        println!("VM > ADDI: 0bxxxxxxxxxxxxxxxxxx000xxxx0010011");
-        match_mask!(inst, "xxxxxxxxxxxxxxxxxx000xxxx0010011")
+        println!("VM > ADDI: 0bxxxxxxxxxxxxxxxxx000xxxxx0010011");
+        match_mask!(inst, "xxxxxxxxxxxxxxxxx000xxxxx0010011")
     }
 
     fn step(&self, inst: rv32::Word, state: &mut cpu::CPUState) {
@@ -114,8 +114,8 @@ impl Instruction for ADD {
     fn match_inst(&self, inst: rv32::Word) -> bool {
         println!("VM > Checking ADD");
         println!("VM > ADD: 0b{:032b}", inst);
-        println!("VM > ADD: 0b0000000xxxxxxxxxxx000xxxx0110011");
-        match_mask!(inst, "0000000xxxxxxxxxxx000xxxx0110011")
+        println!("VM > ADD: 0b0000000xxxxxxxxxx000xxxxx0110011");
+        match_mask!(inst, "0000000xxxxxxxxxx000xxxxx0110011")
     }
 
     fn step(&self, inst: rv32::Word, state: &mut cpu::CPUState) {
