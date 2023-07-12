@@ -25,7 +25,7 @@ impl Instruction for ADDI {
     fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState) {
         println!("VM > Executing ADDI");
         let inst = unsafe { inst.I };
-        state.x[inst.rd() as usize] = state.x[inst.rs1() as usize].wrapping_add(sext(inst.imm() as u32,));
+        state.x[inst.rd() as usize] = state.x[inst.rs1() as usize].wrapping_add(sext(inst.imm() as u32, 32));
     }
 }
 
