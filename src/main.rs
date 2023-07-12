@@ -7,14 +7,14 @@ use std::io::Read;
 use std::{cell::RefCell, rc::Rc};
 
 mod cpu;
-mod ext;
 mod err;
-mod system;
+mod ext;
 mod inst;
+mod system;
 
-use crate::system::bus;
-use crate::ext::decode;
 use crate::cpu::*;
+use crate::ext::decode;
+use crate::system::bus;
 
 struct VMRV32I {
     bus: Rc<RefCell<bus::Bus>>,
@@ -24,14 +24,18 @@ struct VMRV32I {
 
 impl VMRV32I {
     fn new() -> VMRV32I {
-        let extensions = vec!['i'];
+        let extensions = vec!['i', 'm'];
 
         let bus = Rc::new(RefCell::new(bus::Bus::new()));
-        let instruction_decoder = Rc::new(RefCell::new(decode::DecodeCycle::new(extensions)));
-        let mut cpu = CPU::new(Rc::clone(&bus), Rc::clone(&instruction_decoder));
+        let instruction_decoder = Rc::new(RefCell::new(decode::DecodeCycle::new(extensions.clone())));
+        let mut cpu = CPU::new(Rc::clone(&bus), Rc::clone(&instruction_decoder), extensions.clone());
 
         cpu.init();
-        VMRV32I { cpu, bus, instruction_decoder }
+        VMRV32I {
+            cpu,
+            bus,
+            instruction_decoder,
+        }
     }
 
     fn load_prog(&mut self, file: &str) {

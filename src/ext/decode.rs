@@ -1,7 +1,7 @@
 use bits::match_mask;
 use enum_dispatch::*;
-use strum::{IntoEnumIterator, EnumIter};
 use modular_bitfield::prelude::*;
+use strum::{EnumIter, IntoEnumIterator};
 
 use crate::cpu;
 use crate::system::rv32;
@@ -78,7 +78,7 @@ pub union GenInstruction {
 trait Instruction {
     fn name(&self) -> &'static str;
     fn match_inst(&self, inst: rv32::Word) -> bool;
-    fn step(&self, inst: rv32::Word, state: &mut cpu::CPUState);
+    fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState);
 }
 
 #[derive(Default, Copy, Clone)]
@@ -96,10 +96,10 @@ impl Instruction for ADDI {
         match_mask!(inst, "xxxxxxxxxxxxxxxxx000xxxxx0010011")
     }
 
-    fn step(&self, inst: rv32::Word, state: &mut cpu::CPUState) {
-        println!("VM > Decoded I Type instruction 0x{:08x}", inst);
+    fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState) {
         println!("VM > Executing ADDI");
-        // self.x[inst.rd() as usize] = self.x[inst.rs1() as usize].wrapping_add(inst.imm() as u32);
+        let inst = unsafe { inst.I };
+        state.x[inst.rd() as usize] = state.x[inst.rs1() as usize].wrapping_add(inst.imm() as u32);
     }
 }
 
@@ -118,9 +118,31 @@ impl Instruction for ADD {
         match_mask!(inst, "0000000xxxxxxxxxx000xxxxx0110011")
     }
 
-    fn step(&self, inst: rv32::Word, state: &mut cpu::CPUState) {
-        println!("VM > Decoded R Type instruction 0x{:08x}", inst);
+    fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState) {
         println!("VM > Executing ADD");
+        let inst = unsafe { inst.R };
+        state.x[inst.rd() as usize] =
+            state.x[inst.rs1() as usize].wrapping_add(state.x[inst.rs2() as usize]);
+    }
+}
+
+#[derive(Default, Copy, Clone)]
+struct GENERICM;
+
+impl Instruction for GENERICM {
+    fn name(&self) ->  &'static str {
+        "GENERICM"
+    }
+
+    fn match_inst(&self,inst:rv32::Word) -> bool {
+        println!("VM > Checking GENERICM");
+        println!("VM > GENERICM: 0b{:032b}", inst);
+        println!("VM > GENERICM: 0b0000000xxxxxxxxxx000xxxxx0110011");
+        match_mask!(inst, "0000000xxxxxxxxxx000xxxxx0110011")
+    }
+
+    fn step(&self,inst:GenInstruction,state: &mut cpu::CPUState) {
+        println!("epc")
     }
 }
 
@@ -131,8 +153,10 @@ enum ExtensionI {
     ADD(ADD),
 }
 
-enum Extensions {
-    ExtensionI(Option<ExtensionI>),
+#[enum_dispatch(Instruction)]
+#[derive(EnumIter)]
+enum ExtensionM {
+    GENERICM(GENERICM)
 }
 
 pub struct DecodeCycle {
@@ -144,29 +168,33 @@ impl DecodeCycle {
         DecodeCycle { extensions: ext }
     }
 
-    pub fn decode_exec_inst(&self, inst: rv32::Word, state: &mut cpu::CPUState) -> Result<(), String> {
+    pub fn decode_exec_inst(
+        &self,
+        inst: rv32::Word,
+        state: &mut cpu::CPUState,
+    ) -> Result<(), &str> {
         // we want to go through each extension and then go through each instruction in that extension
         // if we find a match, we want to execute it
         // if we don't find a match, we want to return an error
 
-        for extension in self.extensions.iter() {
-            match extension {
-                'i' => {
-                    println!("VM > Attempting to decode instruction as I extension: 0x{:08x}", inst);
-                    for instruction in ExtensionI::iter() {
-                        println!("VM > Checking instruction: {:?}", instruction.name());
-                        if instruction.match_inst(inst) {
-                            println!("VM > Decoded instruction as I extension: 0x{:08x}", inst);
-                            instruction.step(inst, state);
-                            return Ok(());
-                        }
-                    }
-                }
-                _ => {
-                    println!("VM > Unknown Extension");
+        fn enumerate_extension<T: IntoEnumIterator + Instruction>(inst: rv32::Word, state: &mut cpu::CPUState) -> Option<()> {
+            for instruction in T::iter() {
+                if instruction.match_inst(inst) {
+                    let geninst = GenInstruction { inst };
+                    instruction.step(geninst, state);
+                    return Some(());
                 }
             }
+            None
         }
-        Ok(())
-   }
+
+        for extension in self.extensions.iter() {
+            match extension {
+                'm' => if let Some(()) = enumerate_extension::<ExtensionM>(inst, state) { return Ok(()); },
+                'i' => if let Some(()) = enumerate_extension::<ExtensionI>(inst, state) { return Ok(()); },
+                _ => println!("VM > Unknown Extension"),
+            }
+        }
+        Err("No instruction found")
+    }
 }
