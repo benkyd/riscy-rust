@@ -89,13 +89,19 @@ impl Instruction for JALR {
     }
 
     fn match_inst(&self, inst: rv32::Word) -> bool {
-        match_mask!(inst, "xxxxxxxxxxxxxxxxxxxxxxxxx1101111")
+        // testing against print 
+        println!("JALR: {:032b}", inst);
+        println!("JALR: xxxxxxxxxxxxxxxxx000xxxxx1100111");
+        match_mask!(inst, "xxxxxxxxxxxxxxxxx000xxxxx1100111")
     }
 
     fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState) {
         println!("VM > Executing JALR");
         let inst = unsafe { inst.I };
-        
+        let offset = sext(inst.full_imm(), 32);
+        let pc = offset.wrapping_add(state.x[inst.rs1() as usize]);
+        state.x[inst.rd() as usize] = state.pc + rv32::WORD as u32;
+        state.pc = pc - 4;
     }
 }
 
@@ -144,6 +150,7 @@ pub enum ExtensionI {
     LUI(LUI),
     AUIPC(AUIPC),
     JAL(JAL),
+    JALR(JALR),
     ADDI(ADDI),
     ADD(ADD),
 }
