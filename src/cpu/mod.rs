@@ -68,7 +68,6 @@ impl CPU {
             // fetch
             let inst = self.fetch();
             println!("VM > Fetched 0x{:08x}: 0x{:08x}", self.state.pc, inst);
-            self.state.pc = self.state.pc + rv32::WORD as u32;
             self.state.x[0] = 0x00000000;
 
             self.instruction_decoder
@@ -76,17 +75,19 @@ impl CPU {
                 .decode_exec_inst(inst, &mut self.state)?;
 
             self.dump_reg();
+            self.state.pc = self.state.pc + rv32::WORD as u32;
         }
         Ok(())
     }
 
     fn dump_reg(&mut self) {
         println!("VM > Dumping registers");
-        println!("PC : 0x{:08x}", self.state.pc);
-        for i in 0..4 {
-            for j in 0..8 {
-                let coord = (i * 8) + j;
-                print!("x{0: <2}: {1: <4}", coord, self.state.x[coord]);
+        println!("   > PC : 0x{:08x}", self.state.pc);
+        for i in 0..8 {
+            print!("   > ");
+            for j in 0..4 {
+                let coord = (i * 4) + j;
+                print!("x{0: <2}: 0x{1: <08x} ", coord, self.state.x[coord]);
             }
             println!("");
         }

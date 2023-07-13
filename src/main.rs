@@ -9,8 +9,8 @@ use std::{cell::RefCell, rc::Rc};
 mod cpu;
 mod err;
 mod ext;
-mod system;
 mod helpers;
+mod system;
 
 use crate::cpu::*;
 use crate::ext::decode;
@@ -27,8 +27,13 @@ impl VMRV32I {
         let extensions = vec!['i'];
 
         let bus = Rc::new(RefCell::new(bus::Bus::new()));
-        let instruction_decoder = Rc::new(RefCell::new(decode::DecodeCycle::new(extensions.clone())));
-        let mut cpu = CPU::new(Rc::clone(&bus), Rc::clone(&instruction_decoder), extensions.clone());
+        let instruction_decoder =
+            Rc::new(RefCell::new(decode::DecodeCycle::new(extensions.clone())));
+        let mut cpu = CPU::new(
+            Rc::clone(&bus),
+            Rc::clone(&instruction_decoder),
+            extensions.clone(),
+        );
 
         cpu.init();
         VMRV32I {
@@ -38,7 +43,7 @@ impl VMRV32I {
         }
     }
 
-    fn load_prog(&mut self, file: &str) {
+    fn load_prog(&mut self, file: &str) -> u32 {
         println!("VM > Loading program: {}", file);
 
         let f = File::open(file).expect("file not found");
@@ -56,11 +61,12 @@ impl VMRV32I {
         }
 
         println!("VM > Program loaded to 0x{:08x}", self.cpu.get_pc());
+        buffer.len() as u32
     }
 
-    fn dump_prog(&mut self) {
+    fn dump_prog(&mut self, size: u32) {
         println!("VM > Dumping program (virtual addresses)");
-        for i in 0..12 {
+        for i in 0..size {
             if i % 4 == 0 {
                 println!(
                     "VM > 0x{:08x}: 0x{:08x}",
@@ -69,6 +75,10 @@ impl VMRV32I {
                 );
             }
         }
+    }
+
+    fn dump_relavent_memory(&self) {
+        println!("");
     }
 
     fn dispatch(&mut self) {
@@ -83,7 +93,7 @@ fn main() {
     println!("VM Starting Up");
 
     let mut vm = VMRV32I::new();
-    vm.load_prog("./test/test.bin");
-    vm.dump_prog();
+    let size = vm.load_prog("./test/test.bin");
+    vm.dump_prog(size);
     vm.dispatch();
 }

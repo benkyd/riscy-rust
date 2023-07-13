@@ -2,8 +2,7 @@ use crate::system::bus;
 use crate::system::rv32;
 
 //pub const DRAM_SIZE: u32 = 1 * 1024 * 1024 * 1024; // 1GB
-//pub const DRAM_SIZE: u32 = 1 * 1024; // 1KB
-pub const DRAM_SIZE: u32 = 12;
+pub const DRAM_SIZE: u32 = 1 * 1024; // 1KB
 
 pub struct RAM(pub Vec<rv32::Byte>);
 

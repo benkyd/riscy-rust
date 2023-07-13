@@ -1,17 +1,18 @@
-GCC_COMPILER=riscv32-unknown-elf-gcc
-GCC_OBJCOPY=riscv32-unknown-elf-objcopy
+TARGET=test
+GCC_PREFIX=riscv32-unknown-elf
 
-all: bin
+all: build
 
 assemble:
-	$(GCC_COMPILER) -S test.c
+	$(GCC_PREFIX)-gcc -S $(TARGET).c
 
 build:
-	$(GCC_COMPILER) -Wl,-Ttext=0x0 -nostdlib -march=rv64i -mabi=lp64 -o test test.S
-
-bin: build
-	$(GCC_OBJCOPY) -O binary test test.bin
+	$(GCC_PREFIX)-gcc -Wl,-Ttext=0x0 -nostdlib -march=rv64i -mabi=lp64 -o $(TARGET) $(TARGET).S
+	$(GCC_PREFIX)-objdump -t $(TARGET) > $(TARGET).map
+	$(GCC_PREFIX)-objdump -S $(TARGET) > $(TARGET).lst
+	$(GCC_PREFIX)-objcopy -O binary $(TARGET) $(TARGET).bin
+	$(GCC_PREFIX)-objcopy -O ihex $(TARGET) $(TARGET).hex
 
 clean:
-	rm -f test test.bin
+	rm -f $(TARGET) $(TARGET).bin
 

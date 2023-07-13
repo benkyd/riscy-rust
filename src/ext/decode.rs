@@ -16,6 +16,7 @@ impl DecodeCycle {
     }
 
     // TODO: speed this up by matching based on the opcode field and then fn3
+    // TODO: Pass around only the union
     pub fn decode_exec_inst(
         &self,
         inst: rv32::Word,

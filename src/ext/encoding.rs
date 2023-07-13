@@ -60,12 +60,12 @@ impl ImmediateMode for IType {
 
 #[bitfield]
 pub struct SType {
-    opcode: B7,
-    imm_4_0: B5,
-    funct3: B3,
-    rs1: B5,
-    rs2: B5,
-    imm_11_5: B7,
+    pub opcode: B7,
+    pub imm_4_0: B5,
+    pub funct3: B3,
+    pub rs1: B5,
+    pub rs2: B5,
+    pub imm_11_5: B7,
 }
 
 // imm[11:5] = inst[31:25], imm[4:0] = inst[11:7]
@@ -81,33 +81,72 @@ impl ImmediateMode for SType {
 
 #[bitfield]
 pub struct BType {
-    opcode: B7,
-    imm_11: B1,
-    imm_4_1: B4,
-    funct3: B3,
-    rs1: B5,
-    rs2: B5,
-    imm_10_5: B6,
-    imm_12: B1,
+    pub opcode: B7,
+    pub imm_11: B1,
+    pub imm_4_1: B4,
+    pub funct3: B3,
+    pub rs1: B5,
+    pub rs2: B5,
+    pub imm_10_5: B6,
+    pub imm_12: B1,
+}
+
+impl ImmediateMode for BType {
+    fn sext_imm(&self) -> rv32::XLen {
+        helpers::sext(self.full_imm(), 12)
+    }
+
+    fn full_imm(&self) -> rv32::XLen {
+        // >0b1 << 1 | 0b1 << 6 | 0b111110 << 4 | 0b1110
+        let imm_12 = self.imm_12() as rv32::XLen;
+        let imm_11 = self.imm_11() as rv32::XLen;
+        let imm_10_5 = self.imm_10_5() as rv32::XLen;
+        let imm_4_1 = self.imm_4_1() as rv32::XLen;
+        (imm_12 << 1) | (imm_11 << 1) | (imm_10_5 << 6) | imm_4_1
+    }
 }
 
 #[bitfield]
 pub struct UType {
-    opcode: B7,
-    rd: B5,
-    imm: B20,
+    pub opcode: B7,
+    pub rd: B5,
+    pub imm: B20,
+}
+
+impl ImmediateMode for UType {
+    fn sext_imm(&self) -> rv32::XLen {
+        helpers::sext(self.full_imm(), 20)
+    }
+
+    fn full_imm(&self) -> rv32::XLen {
+        self.imm()
+    }
 }
 
 #[bitfield]
 pub struct JType {
-    opcode: B7,
-    rd: B5,
-    imm_19_12: B8,
-    imm_11: B1,
-    imm_10_1: B10,
-    imm_20: B1,
+    pub opcode: B7,
+    pub rd: B5,
+    pub imm_19_12: B8,
+    pub imm_11: B1,
+    pub imm_10_1: B10,
+    pub imm_20: B1,
 }
 
+impl ImmediateMode for JType {
+    fn sext_imm(&self) -> rv32::XLen {
+        helpers::sext(self.full_imm(), 20)
+    }
+
+    fn full_imm(&self) -> rv32::XLen {
+        // >0b1 << 1 | 0b1 << 6 | 0b111110 << 4 | 0b1110
+        let imm_20 = self.imm_20() as rv32::XLen;
+        let imm_19_12 = self.imm_19_12() as rv32::XLen;
+        let imm_11 = self.imm_11() as rv32::XLen;
+        let imm_10_1 = self.imm_10_1() as rv32::XLen;
+        (imm_20 << 8) | (imm_19_12 << 1) | (imm_11 << 10) | imm_10_1
+    }
+}
 
 #[repr(align(8))]
 pub union GenInstruction {
