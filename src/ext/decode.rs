@@ -15,6 +15,7 @@ impl DecodeCycle {
         DecodeCycle { extensions: ext }
     }
 
+    // TODO: speed this up by matching based on the opcode field and then fn3
     pub fn decode_exec_inst(
         &self,
         inst: rv32::Word,

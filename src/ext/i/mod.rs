@@ -3,8 +3,9 @@ use enum_dispatch::*;
 use strum::EnumIter;
 
 use super::encoding::{GenInstruction, Instruction};
-use crate::helpers::sext;
 use crate::cpu;
+use crate::ext::encoding::ImmediateMode;
+use crate::helpers::sext;
 use crate::system::rv32;
 
 #[derive(Default, Copy, Clone)]
@@ -25,7 +26,8 @@ impl Instruction for ADDI {
     fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState) {
         println!("VM > Executing ADDI");
         let inst = unsafe { inst.I };
-        state.x[inst.rd() as usize] = state.x[inst.rs1() as usize].wrapping_add(sext(inst.imm() as u32, 32));
+        state.x[inst.rd() as usize] =
+            state.x[inst.rs1() as usize].wrapping_add(inst.sext_imm())
     }
 }
 
@@ -58,4 +60,3 @@ pub enum ExtensionI {
     ADDI(ADDI),
     ADD(ADD),
 }
-
