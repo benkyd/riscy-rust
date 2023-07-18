@@ -86,6 +86,11 @@ impl VMRV32I {
             Ok(_) => println!("VM > Program exited peacefully"),
             Err(e) => println!("VM > Program exited violently with error: {}", e),
         }
+
+        loop {
+            println!("VM > CPU has stalled");
+            std::thread::sleep(std::time::Duration::from_secs(10));
+        }
     }
 }
 

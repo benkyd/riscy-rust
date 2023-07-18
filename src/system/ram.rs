@@ -1,13 +1,14 @@
 use crate::system::bus;
 use crate::system::rv32;
 
-//pub const DRAM_SIZE: u32 = 1 * 1024 * 1024 * 1024; // 1GB
-pub const DRAM_SIZE: u32 = 1 * 1024; // 1KB
+pub const DRAM_SIZE: u32 = 1 * 1024 * 1024 * 1024; // 1GB
+// pub const DRAM_SIZE: u32 = 1 * 1024; // 1KB
 
 pub struct RAM(pub Vec<rv32::Byte>);
 
 impl RAM {
     pub fn new() -> RAM {
+        println!("VM > Initialised RAM with size: {} bytes", DRAM_SIZE);
         RAM(vec![0; DRAM_SIZE as usize])
     }
 

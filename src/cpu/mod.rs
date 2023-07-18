@@ -22,11 +22,11 @@ pub struct CPUState {
     pub x: [rv32::Word; 32],
     pub pc: rv32::Word,
     pub trap: rv32::Word,
+    pub bus: Rc<RefCell<Bus>>,
 }
 
 pub struct CPU {
     state: CPUState,
-    bus: Rc<RefCell<Bus>>,
     instruction_decoder: Rc<RefCell<decode::DecodeCycle>>,
     extensions: Vec<char>,
 }
@@ -42,14 +42,15 @@ impl CPU {
                 x: [0; 32],
                 pc: 0,
                 trap: 0,
+                bus,
             },
-            bus,
             instruction_decoder,
             extensions,
         }
     }
 
     pub fn init(&mut self) {
+        println!("-----------------");
         println!("VM RISC-V 32I CPU");
         println!("-----------------");
         println!("VM > Initializing CPU");
@@ -65,7 +66,7 @@ impl CPU {
     }
 
     fn fetch(&self) -> rv32::Word {
-        self.bus.borrow_mut().load_32(self.state.pc)
+        self.state.bus.borrow_mut().load_32(self.state.pc)
     }
 
     pub fn exec(&mut self) -> Result<(), String> {
@@ -79,8 +80,8 @@ impl CPU {
                 .borrow_mut()
                 .decode_exec_inst(inst, &mut self.state)?;
 
-            self.dump_reg();
             self.state.pc = self.state.pc + rv32::WORD as u32;
+            self.dump_reg();
         }
         Ok(())
     }

@@ -103,7 +103,7 @@ impl Instruction for JALR {
 }
 
 #[derive(Default, Copy, Clone)]
-pub struct BRANCH; // Thisis is the first time we write a catchall
+pub struct BRANCH; // This is is the first time we write a catchall
                    // instruction, this will match BEQ, BNE, BLT,
                    // BGE, BLTU, BEGE
 impl Instruction for BRANCH {
@@ -156,34 +156,73 @@ impl Instruction for BRANCH {
 }
 
 #[derive(Default, Copy, Clone)]
-pub struct Load;
-
-impl Instruction for Load {
-    fn name(&self) ->  &'static str {
+pub struct LOAD; // Another catchall instruction, this will match
+                 // LB, LH, LW, LBU, LHU
+impl Instruction for LOAD {
+    fn name(&self) -> &'static str {
         "LOAD"
     }
 
-    fn match_inst(&self,inst:rv32::Word) -> bool {
+    fn match_inst(&self, inst: rv32::Word) -> bool {
         match_mask!(inst, "xxxxxxxxxxxxxxxxxxxxxxxxx0000011")
     }
 
-    fn step(&self,inst:GenInstruction,state: &mut cpu::CPUState) {
-        
+    fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState) {
+        println!("VM > Executing LOAD");
+        let inst = unsafe { inst.I };
+        let offset = inst.sext_imm();
+        let addr = state.x[inst.rs1() as usize].wrapping_add(offset);
+        match inst.funct3() {
+            0b000 => {
+                state.x[inst.rd() as usize] = state.bus.borrow_mut().load_8(addr) as i8 as i32 as u32
+            }
+            0b001 => {
+                state.x[inst.rd() as usize] = state.bus.borrow_mut().load_16(addr) as i16 as i32 as u32
+            }
+            0b010 => {
+                state.x[inst.rd() as usize] = state.bus.borrow_mut().load_32(addr) as i32 as u32
+            }
+            0b100 => {
+                state.x[inst.rd() as usize] = state.bus.borrow_mut().load_8(addr) as u32
+            }
+            0b101 => {
+                state.x[inst.rd() as usize] = state.bus.borrow_mut().load_16(addr) as u32
+            }
+            _ => state.trap = 3,
+        }
     }
 }
 
 #[derive(Default, Copy, Clone)]
-pub struct Store;
+pub struct STORE;
 
-impl Instruction for Store {
-    fn name(&self) ->  &'static str {
+impl Instruction for STORE {
+    fn name(&self) -> &'static str {
         "STORE"
     }
 
-    fn match_inst(&self,inst:rv32::Word) -> bool {
+    fn match_inst(&self, inst: rv32::Word) -> bool {
         match_mask!(inst, "xxxxxxxxxxxxxxxxxxxxxxxxx0100011")
     }
 
+    fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState) {
+        println!("VM > Executing STORE");
+        let inst = unsafe { inst.S };
+        let offset = inst.sext_imm();
+        let addr = state.x[inst.rs1() as usize].wrapping_add(offset);
+        match inst.funct3() {
+            0b000 => {
+                state.bus.borrow_mut().store_8(addr, state.x[inst.rs2() as usize] as u8)
+            }
+            0b001 => {
+                state.bus.borrow_mut().store_16(addr, state.x[inst.rs2() as usize] as u16)
+            }
+            0b010 => {
+                state.bus.borrow_mut().store_32(addr, state.x[inst.rs2() as usize] as u32)
+            }
+            _ => state.trap = 3,
+        }
+    }
 }
 
 #[derive(Default, Copy, Clone)]
@@ -225,15 +264,15 @@ impl Instruction for ADD {
     }
 }
 
-#[enum_dispatch(Instruction)]
 #[derive(EnumIter)]
+#[enum_dispatch(Instruction)]
 pub enum ExtensionI {
     LUI(LUI),
     AUIPC(AUIPC),
     JAL(JAL),
     JALR(JALR),
     BRANCH(BRANCH),
-    LOAD(BRANCH),
+    LOAD(LOAD),
     STORE(STORE),
     ADDI(ADDI),
     ADD(ADD),
