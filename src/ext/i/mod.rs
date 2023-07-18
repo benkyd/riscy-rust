@@ -89,9 +89,6 @@ impl Instruction for JALR {
     }
 
     fn match_inst(&self, inst: rv32::Word) -> bool {
-        // testing against print 
-        println!("JALR: {:032b}", inst);
-        println!("JALR: xxxxxxxxxxxxxxxxx000xxxxx1100111");
         match_mask!(inst, "xxxxxxxxxxxxxxxxx000xxxxx1100111")
     }
 
@@ -103,6 +100,90 @@ impl Instruction for JALR {
         state.x[inst.rd() as usize] = state.pc + rv32::WORD as u32;
         state.pc = pc - 4;
     }
+}
+
+#[derive(Default, Copy, Clone)]
+pub struct BRANCH; // Thisis is the first time we write a catchall
+                   // instruction, this will match BEQ, BNE, BLT,
+                   // BGE, BLTU, BEGE
+impl Instruction for BRANCH {
+    fn name(&self) -> &'static str {
+        "BEQ, BNE, BLT, BGE, BLTU, BGEU"
+    }
+
+    fn match_inst(&self, inst: rv32::Word) -> bool {
+        match_mask!(inst, "xxxxxxxxxxxxxxxxxxxxxxxxx1100011")
+    }
+
+    fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState) {
+        println!("VM > Executing BEQ, BNE, BLT, BGE, BLTU, BGEU");
+        let inst = unsafe { inst.B };
+        let offset = state.pc + (inst.sext_imm() << 1) - 4;
+        match inst.funct3() {
+            0b000 => {
+                if inst.rs1() == inst.rs2() {
+                    state.pc = offset
+                }
+            }
+            0b001 => {
+                if inst.rs1() != inst.rs2() {
+                    state.pc = offset
+                }
+            }
+            0b100 => {
+                if inst.rs1() < inst.rs2() {
+                    state.pc = offset
+                }
+            }
+            0b101 => {
+                if inst.rs1() >= inst.rs2() {
+                    state.pc = offset
+                }
+            }
+            0b110 => {
+                if (inst.rs1() as u32) < (inst.rs2() as u32) {
+                    state.pc = offset
+                }
+            }
+            0b111 => {
+                if (inst.rs1() as u32) >= (inst.rs2() as u32) {
+                    state.pc = offset
+                }
+            }
+            _ => state.trap = 3,
+        }
+    }
+}
+
+#[derive(Default, Copy, Clone)]
+pub struct Load;
+
+impl Instruction for Load {
+    fn name(&self) ->  &'static str {
+        "LOAD"
+    }
+
+    fn match_inst(&self,inst:rv32::Word) -> bool {
+        match_mask!(inst, "xxxxxxxxxxxxxxxxxxxxxxxxx0000011")
+    }
+
+    fn step(&self,inst:GenInstruction,state: &mut cpu::CPUState) {
+        
+    }
+}
+
+#[derive(Default, Copy, Clone)]
+pub struct Store;
+
+impl Instruction for Store {
+    fn name(&self) ->  &'static str {
+        "STORE"
+    }
+
+    fn match_inst(&self,inst:rv32::Word) -> bool {
+        match_mask!(inst, "xxxxxxxxxxxxxxxxxxxxxxxxx0100011")
+    }
+
 }
 
 #[derive(Default, Copy, Clone)]
@@ -151,6 +232,9 @@ pub enum ExtensionI {
     AUIPC(AUIPC),
     JAL(JAL),
     JALR(JALR),
+    BRANCH(BRANCH),
+    LOAD(BRANCH),
+    STORE(STORE),
     ADDI(ADDI),
     ADD(ADD),
 }

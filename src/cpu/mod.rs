@@ -21,6 +21,7 @@ use std::{cell::RefCell, rc::Rc};
 pub struct CPUState {
     pub x: [rv32::Word; 32],
     pub pc: rv32::Word,
+    pub trap: rv32::Word,
 }
 
 pub struct CPU {
@@ -37,7 +38,11 @@ impl CPU {
         extensions: Vec<char>,
     ) -> CPU {
         CPU {
-            state: CPUState { x: [0; 32], pc: 0 },
+            state: CPUState {
+                x: [0; 32],
+                pc: 0,
+                trap: 0,
+            },
             bus,
             instruction_decoder,
             extensions,

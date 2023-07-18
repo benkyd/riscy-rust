@@ -4,12 +4,10 @@ test:     file format elf64-littleriscv
 
 Disassembly of section .text:
 
-0000000000000000 <main-0x14>:
-   0:	fffff0b7          	lui	ra,0xfffff
-   4:	12300113          	addi	sp,zero,291
-   8:	12300113          	addi	sp,zero,291
-   c:	80000337          	lui	t1,0x80000
-  10:	004300e7          	jalr	ra,4(t1) # ffffffff80000004 <__global_pointer$+0xffffffff7fffe7ec>
+0000000000000000 <main-0xc>:
+   0:	12300113          	addi	sp,zero,291
+   4:	12300193          	addi	gp,zero,291
+   8:	00310263          	beq	sp,gp,c <main>
 
-0000000000000014 <main>:
-  14:	06400293          	addi	t0,zero,100
+000000000000000c <main>:
+   c:	06400293          	addi	t0,zero,100
