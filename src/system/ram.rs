@@ -59,4 +59,33 @@ impl RAM {
         let address = (address - bus::DRAM_BASE) as usize;
         memory[address] = data;
     }
+
+    pub fn write_16(&mut self, address: rv32::XLen, data: rv32::HalfWord) {
+        let memory = &mut self.0;
+        let address = (address - bus::DRAM_BASE) as usize;
+        memory[address] = (data & 0xFF) as rv32::Byte;
+        memory[address + 1] = ((data >> 8) & 0xFF) as rv32::Byte;
+    }
+
+    pub fn write_32(&mut self, address: rv32::XLen, data: rv32::Word) {
+        let memory = &mut self.0;
+        let address = (address - bus::DRAM_BASE) as usize;
+        memory[address] = (data & 0xFF) as rv32::Byte;
+        memory[address + 1] = ((data >> 8) & 0xFF) as rv32::Byte;
+        memory[address + 2] = ((data >> 16) & 0xFF) as rv32::Byte;
+        memory[address + 3] = ((data >> 24) & 0xFF) as rv32::Byte;
+    }
+
+    pub fn write_64(&mut self, address: rv32::XLen, data: rv32::DoubleWord) {
+        let memory = &mut self.0;
+        let address = (address - bus::DRAM_BASE) as usize;
+        memory[address] = (data & 0xFF) as rv32::Byte;
+        memory[address + 1] = ((data >> 8) & 0xFF) as rv32::Byte;
+        memory[address + 2] = ((data >> 16) & 0xFF) as rv32::Byte;
+        memory[address + 3] = ((data >> 24) & 0xFF) as rv32::Byte;
+        memory[address + 4] = ((data >> 32) & 0xFF) as rv32::Byte;
+        memory[address + 5] = ((data >> 40) & 0xFF) as rv32::Byte;
+        memory[address + 6] = ((data >> 48) & 0xFF) as rv32::Byte;
+        memory[address + 7] = ((data >> 56) & 0xFF) as rv32::Byte;
+    }
 }

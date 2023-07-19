@@ -98,7 +98,7 @@ fn main() {
     println!("VM Starting Up");
 
     let mut vm = VMRV32I::new();
-    let size = vm.load_prog("./test/test.bin");
+    let size = vm.load_prog("./test/c_test.bin");
     vm.dump_prog(size);
     vm.dispatch();
 }

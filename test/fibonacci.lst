@@ -1,0 +1,66 @@
+
+fibonacci:     file format elf64-littleriscv
+
+
+Disassembly of section .text:
+
+0000000000000000 <fib>:
+   0:	fe010113          	addi	sp,sp,-32
+   4:	00112e23          	sw	ra,28(sp)
+   8:	00812c23          	sw	s0,24(sp)
+   c:	00912a23          	sw	s1,20(sp)
+  10:	02010413          	addi	s0,sp,32
+  14:	fea42623          	sw	a0,-20(s0)
+  18:	fec42703          	lw	a4,-20(s0)
+  1c:	00100793          	addi	a5,zero,1
+  20:	00e7c663          	blt	a5,a4,2c <fib+0x2c>
+  24:	fec42783          	lw	a5,-20(s0)
+  28:	0300006f          	jal	zero,58 <fib+0x58>
+  2c:	fec42783          	lw	a5,-20(s0)
+  30:	fff78793          	addi	a5,a5,-1
+  34:	00078513          	addi	a0,a5,0
+  38:	fc9ff0ef          	jal	ra,0 <fib>
+  3c:	00050493          	addi	s1,a0,0
+  40:	fec42783          	lw	a5,-20(s0)
+  44:	ffe78793          	addi	a5,a5,-2
+  48:	00078513          	addi	a0,a5,0
+  4c:	fb5ff0ef          	jal	ra,0 <fib>
+  50:	00050793          	addi	a5,a0,0
+  54:	00f487b3          	add	a5,s1,a5
+  58:	00078513          	addi	a0,a5,0
+  5c:	01c12083          	lw	ra,28(sp)
+  60:	01812403          	lw	s0,24(sp)
+  64:	01412483          	lw	s1,20(sp)
+  68:	02010113          	addi	sp,sp,32
+  6c:	00008067          	jalr	zero,0(ra)
+
+0000000000000070 <return_function>:
+  70:	fe010113          	addi	sp,sp,-32
+  74:	00812e23          	sw	s0,28(sp)
+  78:	02010413          	addi	s0,sp,32
+  7c:	fea42623          	sw	a0,-20(s0)
+  80:	fec42783          	lw	a5,-20(s0)
+  84:	00078513          	addi	a0,a5,0
+  88:	01c12403          	lw	s0,28(sp)
+  8c:	02010113          	addi	sp,sp,32
+  90:	00008067          	jalr	zero,0(ra)
+
+0000000000000094 <main>:
+  94:	fe010113          	addi	sp,sp,-32
+  98:	00112e23          	sw	ra,28(sp)
+  9c:	00812c23          	sw	s0,24(sp)
+  a0:	02010413          	addi	s0,sp,32
+  a4:	01200793          	addi	a5,zero,18
+  a8:	fef42623          	sw	a5,-20(s0)
+  ac:	fec42503          	lw	a0,-20(s0)
+  b0:	f51ff0ef          	jal	ra,0 <fib>
+  b4:	00050793          	addi	a5,a0,0
+  b8:	00078513          	addi	a0,a5,0
+  bc:	fb5ff0ef          	jal	ra,70 <return_function>
+  c0:	fea42423          	sw	a0,-24(s0)
+  c4:	fe842783          	lw	a5,-24(s0)
+  c8:	00078513          	addi	a0,a5,0
+  cc:	01c12083          	lw	ra,28(sp)
+  d0:	01812403          	lw	s0,24(sp)
+  d4:	02010113          	addi	sp,sp,32
+  d8:	00008067          	jalr	zero,0(ra)

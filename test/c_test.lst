@@ -1,0 +1,58 @@
+
+c_test:     file format elf64-littleriscv
+
+
+Disassembly of section .text:
+
+0000000000000000 <main>:
+   0:	ff010113          	addi	sp,sp,-16
+   4:	00113423          	sd	ra,8(sp)
+   8:	00813023          	sd	s0,0(sp)
+   c:	01010413          	addi	s0,sp,16
+  10:	00a00513          	addi	a0,zero,10
+  14:	01c000ef          	jal	ra,30 <fib>
+  18:	00050793          	addi	a5,a0,0
+  1c:	00078513          	addi	a0,a5,0
+  20:	00813083          	ld	ra,8(sp)
+  24:	00013403          	ld	s0,0(sp)
+  28:	01010113          	addi	sp,sp,16
+  2c:	00008067          	jalr	zero,0(ra)
+
+0000000000000030 <fib>:
+  30:	fd010113          	addi	sp,sp,-48
+  34:	02113423          	sd	ra,40(sp)
+  38:	02813023          	sd	s0,32(sp)
+  3c:	00913c23          	sd	s1,24(sp)
+  40:	03010413          	addi	s0,sp,48
+  44:	00050793          	addi	a5,a0,0
+  48:	fcf42e23          	sw	a5,-36(s0)
+  4c:	fdc42783          	lw	a5,-36(s0)
+  50:	0007879b          	addiw	a5,a5,0
+  54:	00078a63          	beq	a5,zero,68 <fib+0x38>
+  58:	fdc42783          	lw	a5,-36(s0)
+  5c:	0007871b          	addiw	a4,a5,0
+  60:	00100793          	addi	a5,zero,1
+  64:	00f71663          	bne	a4,a5,70 <fib+0x40>
+  68:	fdc42783          	lw	a5,-36(s0)
+  6c:	0400006f          	jal	zero,ac <fib+0x7c>
+  70:	fdc42783          	lw	a5,-36(s0)
+  74:	fff7879b          	addiw	a5,a5,-1
+  78:	0007879b          	addiw	a5,a5,0
+  7c:	00078513          	addi	a0,a5,0
+  80:	fb1ff0ef          	jal	ra,30 <fib>
+  84:	00050793          	addi	a5,a0,0
+  88:	00078493          	addi	s1,a5,0
+  8c:	fdc42783          	lw	a5,-36(s0)
+  90:	ffe7879b          	addiw	a5,a5,-2
+  94:	0007879b          	addiw	a5,a5,0
+  98:	00078513          	addi	a0,a5,0
+  9c:	f95ff0ef          	jal	ra,30 <fib>
+  a0:	00050793          	addi	a5,a0,0
+  a4:	00f487bb          	addw	a5,s1,a5
+  a8:	0007879b          	addiw	a5,a5,0
+  ac:	00078513          	addi	a0,a5,0
+  b0:	02813083          	ld	ra,40(sp)
+  b4:	02013403          	ld	s0,32(sp)
+  b8:	01813483          	ld	s1,24(sp)
+  bc:	03010113          	addi	sp,sp,48
+  c0:	00008067          	jalr	zero,0(ra)
