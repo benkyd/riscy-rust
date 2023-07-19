@@ -121,31 +121,37 @@ impl Instruction for BRANCH {
         let offset = state.pc + (inst.sext_imm() << 1) - 4;
         match inst.funct3() {
             0b000 => {
+                // beq
                 if inst.rs1() == inst.rs2() {
                     state.pc = offset
                 }
             }
             0b001 => {
+                // bne
                 if inst.rs1() != inst.rs2() {
                     state.pc = offset
                 }
             }
             0b100 => {
+                // blt
                 if inst.rs1() < inst.rs2() {
                     state.pc = offset
                 }
             }
             0b101 => {
+                // bge
                 if inst.rs1() >= inst.rs2() {
                     state.pc = offset
                 }
             }
             0b110 => {
+                // bltu
                 if (inst.rs1() as u32) < (inst.rs2() as u32) {
                     state.pc = offset
                 }
             }
             0b111 => {
+                // bgeu
                 if (inst.rs1() as u32) >= (inst.rs2() as u32) {
                     state.pc = offset
                 }
@@ -174,20 +180,21 @@ impl Instruction for LOAD {
         let addr = state.x[inst.rs1() as usize].wrapping_add(offset);
         match inst.funct3() {
             0b000 => {
-                state.x[inst.rd() as usize] = state.bus.borrow_mut().load_8(addr) as i8 as i32 as u32
+                // lb
+                state.x[inst.rd() as usize] =
+                    state.bus.borrow_mut().load_8(addr) as i8 as i32 as u32
             }
             0b001 => {
-                state.x[inst.rd() as usize] = state.bus.borrow_mut().load_16(addr) as i16 as i32 as u32
+                // lh
+                state.x[inst.rd() as usize] =
+                    state.bus.borrow_mut().load_16(addr) as i16 as i32 as u32
             }
             0b010 => {
+                // lw
                 state.x[inst.rd() as usize] = state.bus.borrow_mut().load_32(addr) as i32 as u32
             }
-            0b100 => {
-                state.x[inst.rd() as usize] = state.bus.borrow_mut().load_8(addr) as u32
-            }
-            0b101 => {
-                state.x[inst.rd() as usize] = state.bus.borrow_mut().load_16(addr) as u32
-            }
+            0b100 => state.x[inst.rd() as usize] = state.bus.borrow_mut().load_8(addr) as u32, // lbu
+            0b101 => state.x[inst.rd() as usize] = state.bus.borrow_mut().load_16(addr) as u32, // lhu
             _ => state.trap = 3,
         }
     }
@@ -211,56 +218,155 @@ impl Instruction for STORE {
         let offset = inst.sext_imm();
         let addr = state.x[inst.rs1() as usize].wrapping_add(offset);
         match inst.funct3() {
-            0b000 => {
-                state.bus.borrow_mut().store_8(addr, state.x[inst.rs2() as usize] as u8)
-            }
-            0b001 => {
-                state.bus.borrow_mut().store_16(addr, state.x[inst.rs2() as usize] as u16)
-            }
-            0b010 => {
-                state.bus.borrow_mut().store_32(addr, state.x[inst.rs2() as usize] as u32)
-            }
+            0b000 => state // sb
+                .bus
+                .borrow_mut()
+                .store_8(addr, state.x[inst.rs2() as usize] as u8),
+            0b001 => state // sh
+                .bus
+                .borrow_mut()
+                .store_16(addr, state.x[inst.rs2() as usize] as u16),
+            0b010 => state // sw
+                .bus
+                .borrow_mut()
+                .store_32(addr, state.x[inst.rs2() as usize] as u32),
             _ => state.trap = 3,
         }
     }
 }
 
 #[derive(Default, Copy, Clone)]
-pub struct ADDI;
+pub struct IMM;
 
-impl Instruction for ADDI {
+impl Instruction for IMM {
     fn name(&self) -> &'static str {
-        "ADDI"
+        "ADDI, SLTI, SLTIU, XORI, ORI, ANDI"
     }
 
     fn match_inst(&self, inst: rv32::Word) -> bool {
-        match_mask!(inst, "xxxxxxxxxxxxxxxxx000xxxxx0010011")
+        if match_mask!(inst, "xxxxxxxxxxxxxxxxx000xxxxx0010011") {
+            return true;
+        }
+        if match_mask!(inst, "xxxxxxxxxxxxxxxxx010xxxxx0010011") {
+            return true;
+        }
+        if match_mask!(inst, "xxxxxxxxxxxxxxxxx011xxxxx0010011") {
+            return true;
+        }
+        if match_mask!(inst, "xxxxxxxxxxxxxxxxx100xxxxx0010011") {
+            return true;
+        }
+        if match_mask!(inst, "xxxxxxxxxxxxxxxxx110xxxxx0010011") {
+            return true;
+        }
+        if match_mask!(inst, "xxxxxxxxxxxxxxxxx111xxxxx0010011") {
+            return true;
+        }
+        false
     }
 
     fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState) {
-        println!("VM > Executing ADDI");
+        println!("VM > Executing ADDI, SLTI, SLTIU, XORI, ORI, ANDI");
         let inst = unsafe { inst.I };
-        state.x[inst.rd() as usize] = state.x[inst.rs1() as usize].wrapping_add(inst.sext_imm())
+        let mut retval = 0;
+        let rs1 = state.x[inst.rs1() as usize];
+
+        match inst.funct3() {
+            0b000 => retval = rs1 + inst.sext_imm(), // addi
+            0b010 => retval = ((rs1 as i32) < (inst.sext_imm() as i32)) as u32, // slti
+            0b011 => retval = ((rs1 as u32) < (inst.sext_imm() as u32)) as u32, // sltiu
+            0b100 => retval = rs1 ^ inst.sext_imm(), // xori
+            0b110 => retval = rs1 | inst.sext_imm(), // ori
+            0b111 => retval = rs1 & inst.sext_imm(), // andi
+            _ => state.trap = 3,
+        }
+
+        state.x[inst.rd() as usize] = retval;
     }
 }
 
 #[derive(Default, Copy, Clone)]
-pub struct ADD;
-
-impl Instruction for ADD {
+pub struct SHIFTI; // Compound instruction for SLLI, SRLI and SRAI
+                   // These aren't actually encoded as R type but
+                   // it makes it more convenient to extract the shamt
+impl Instruction for SHIFTI {
     fn name(&self) -> &'static str {
-        "ADD"
+        "SLLI, SRLI, SRAI"
     }
 
     fn match_inst(&self, inst: rv32::Word) -> bool {
-        match_mask!(inst, "0000000xxxxxxxxxx000xxxxx0110011")
+        if match_mask!(inst, "0x00000xxxxxxxxxx001xxxxx0010011") {
+            return true;
+        }
+        if match_mask!(inst, "0x00000xxxxxxxxxx101xxxxx0010011") {
+            return true;
+        }
+        false
     }
 
     fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState) {
-        println!("VM > Executing ADD");
+        println!("VM > Executing SLLI, SRLI, SRAI");
+        let inst = unsafe { inst.R }; // fun7 is the L/A selector
+                                      // rs2 is shamt
+        let mut retval = 0;
+        let shamt = inst.rs2();
+        let rs1 = state.x[inst.rs1() as usize];
+
+        match inst.funct3() {
+            0b001 => retval = rs1 << shamt, //slli
+            0b101 => match inst.funct7() {
+                0b0000000 => retval = rs1 >> shamt,                   // srli
+                0b0100000 => retval = ((rs1 as i32) >> shamt) as u32, // srai
+                _ => state.trap = 3,
+            },
+            _ => state.trap = 3,
+        }
+
+        state.x[inst.rd() as usize] = retval;
+    }
+}
+
+#[derive(Default, Copy, Clone)]
+pub struct OP; // generalised instruction for all operations
+               // including add, sub, sli, slt, sltu, xor, srl
+               // sra, or, and
+impl Instruction for OP {
+    fn name(&self) -> &'static str {
+        "ADD, SUB, SLI, SLT, SLTU, XOR, SRL, SRA, OR, AND"
+    }
+
+    fn match_inst(&self, inst: rv32::Word) -> bool {
+        match_mask!(inst, "0x00000xxxxxxxxxxxxxxxxxx0110011")
+    }
+
+    fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState) {
+        println!("VM > Executing ADD, SUB, SLI, SLT, SLTU, XOR, SRL, SRA, OR, AND");
         let inst = unsafe { inst.R };
-        state.x[inst.rd() as usize] =
-            state.x[inst.rs1() as usize].wrapping_add(state.x[inst.rs2() as usize]);
+        let mut retval = 0;
+        let rs1 = state.x[inst.rs1() as usize];
+        let rs2 = state.x[inst.rs2() as usize];
+
+        match inst.funct3() {
+            0b000 => match inst.funct7() {
+                0b0000000 => retval = rs1 + rs2, // add
+                0b0100000 => retval = rs1 - rs2, // sub
+                _ => state.trap = 3,
+            },
+            0b001 => retval = rs1 << (rs2 & 0x1F), // sll
+            0b010 => retval = ((rs1 as i32) < (rs2 as i32)) as u32, // slt
+            0b011 => retval = ((rs1 as u32) < (rs2 as u32)) as u32, // sltu
+            0b100 => retval = rs1 ^ rs2, // xor
+            0b101 => match inst.funct7() {
+                0b0000000 => retval = rs1 >> (rs2 & 0x1F), // srl
+                0b0100000 => retval = ((rs1 as i32) >> (rs2 & 0x1F)) as u32, // sra
+                _ => state.trap = 3,
+            },
+            0b110 => retval = rs1 | rs2, // or
+            0b111 => retval = rs1 & rs2, // and
+            _ => state.trap = 3,
+        }
+
+        state.x[inst.rd() as usize] = retval;
     }
 }
 
@@ -274,6 +380,7 @@ pub enum ExtensionI {
     BRANCH(BRANCH),
     LOAD(LOAD),
     STORE(STORE),
-    ADDI(ADDI),
-    ADD(ADD),
+    IMM(IMM),
+    SHIFTI(SHIFTI),
+    OP(OP),
 }
