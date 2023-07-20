@@ -6,6 +6,7 @@ use std::io::BufReader;
 use std::io::Read;
 use std::{cell::RefCell, rc::Rc};
 
+mod management;
 mod cpu;
 mod err;
 mod ext;
@@ -20,6 +21,7 @@ struct VMRV32I {
     bus: Rc<RefCell<bus::Bus>>,
     cpu: cpu::CPU,
     instruction_decoder: Rc<RefCell<decode::DecodeCycle>>,
+    manager: management::Management,
 }
 
 impl VMRV32I {
@@ -40,6 +42,7 @@ impl VMRV32I {
             cpu,
             bus,
             instruction_decoder,
+            manager: management::Management::new(),
         }
     }
 
@@ -96,9 +99,11 @@ impl VMRV32I {
 
 fn main() {
     println!("VM Starting Up");
-
+    println!("VM Loading CPU Management Engine");
     let mut vm = VMRV32I::new();
-    let size = vm.load_prog("./test/c_test.bin");
+    vm.manager.prompt();
+
+    let size = vm.load_prog("./test/test.bin");
     vm.dump_prog(size);
     vm.dispatch();
 }

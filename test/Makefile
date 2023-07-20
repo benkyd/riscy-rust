@@ -1,10 +1,10 @@
-TARGET=c_test
+TARGET=test
 GCC_PREFIX=riscv32-unknown-elf
 
 CFLAGS:=-fno-stack-protector
 CFLAGS+=-static-libgcc -fdata-sections -ffunction-sections
 CFLAGS+=-g -O0 -march=rv32ia -mabi=ilp32 -static
-LDFLAGS:= -T flatfile.lds -nostdlib 
+LDFLAGS:= -T flatfile.lds -nostdlib
 
 all: build
 

@@ -1,23 +1,19 @@
 
-test:     file format elf64-littleriscv
+test:     file format elf32-littleriscv
 
 SYMBOL TABLE:
-0000000000000000 l    d  .text	0000000000000000 .text
-00000000000002f8 l    d  .rodata	0000000000000000 .rodata
-0000000000000000 l    d  .comment	0000000000000000 .comment
-0000000000000000 l    d  .riscv.attributes	0000000000000000 .riscv.attributes
-0000000000000000 l    df *ABS*	0000000000000000 binary_search.c
-0000000000001b18 g       *ABS*	0000000000000000 __global_pointer$
-00000000000000f4 g     F .text	0000000000000050 search
-0000000000001318 g       .rodata	0000000000000000 __SDATA_BEGIN__
-0000000000000144 g     F .text	0000000000000108 sort
-0000000000000000         *UND*	0000000000000000 _start
-0000000000001318 g       .rodata	0000000000000000 __BSS_END__
-0000000000001318 g       .rodata	0000000000000000 __bss_start
-000000000000024c g     F .text	00000000000000ac main
-0000000000001318 g       .rodata	0000000000000000 __DATA_BEGIN__
-0000000000001318 g       .rodata	0000000000000000 _edata
-0000000000001318 g       .rodata	0000000000000000 _end
-0000000000000000 g     F .text	00000000000000f4 binary_search
+80000000 l    d  .text	00000000 .text
+00000000 l    d  .riscv.attributes	00000000 .riscv.attributes
+00000000 l    d  .debug_line	00000000 .debug_line
+00000000 l    d  .debug_line_str	00000000 .debug_line_str
+00000000 l    d  .debug_info	00000000 .debug_info
+00000000 l    d  .debug_abbrev	00000000 .debug_abbrev
+00000000 l    d  .debug_aranges	00000000 .debug_aranges
+00000000 l    d  .debug_str	00000000 .debug_str
+00000000 l    df *ABS*	00000000 ccSaJ0Sk.o
+80000000 l       .text	00000000 main
+80000018 l       .text	00000000 loop
+80000034 l       .text	00000000 exit
+00000000         *UND*	00000000 _start
 
 
