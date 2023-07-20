@@ -1,12 +1,12 @@
-int fib(int n);
-
-int main() {
-  return fib(10); // Calculate the 10th fibonacci number.
-}
-
-int fib(int n) {
-  if (n == 0 || n == 1)
-    return n;
-  else
-    return (fib(n - 1) + fib(n - 2));
+__attribute__((section(".start"))) int main() {
+  volatile register int x = 0xD3AD;
+  volatile register int y = 0x1234;
+  volatile register int temp = y;
+  y = x;
+  x = temp;
+  if (x > y) {
+    x = 1;
+  } else {
+    y = 3;
+  }
 }

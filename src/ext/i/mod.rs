@@ -74,7 +74,7 @@ impl Instruction for JAL {
         let offset = sext(inst.full_imm() << 1, 32);
         let pc = offset.wrapping_add(state.pc);
         state.x[inst.rd() as usize] = state.pc + rv32::WORD as u32;
-        state.pc = pc - 4;
+        state.pc = pc.wrapping_sub(rv32::WORD as u32);
     }
 }
 
@@ -98,7 +98,7 @@ impl Instruction for JALR {
         let offset = sext(inst.full_imm(), 32);
         let pc = offset.wrapping_add(state.x[inst.rs1() as usize]);
         state.x[inst.rd() as usize] = state.pc + rv32::WORD as u32;
-        state.pc = pc - 4;
+        state.pc = pc.wrapping_sub(rv32::WORD as u32);
     }
 }
 
@@ -272,12 +272,12 @@ impl Instruction for IMM {
         let rs1 = state.x[inst.rs1() as usize];
 
         match inst.funct3() {
-            0b000 => retval = rs1 + inst.sext_imm(), // addi
+            0b000 => retval = rs1.wrapping_add(inst.sext_imm()), // addi
             0b010 => retval = ((rs1 as i32) < (inst.sext_imm() as i32)) as u32, // slti
             0b011 => retval = ((rs1 as u32) < (inst.sext_imm() as u32)) as u32, // sltiu
-            0b100 => retval = rs1 ^ inst.sext_imm(), // xori
-            0b110 => retval = rs1 | inst.sext_imm(), // ori
-            0b111 => retval = rs1 & inst.sext_imm(), // andi
+            0b100 => retval = rs1 ^ inst.sext_imm(),             // xori
+            0b110 => retval = rs1 | inst.sext_imm(),             // ori
+            0b111 => retval = rs1 & inst.sext_imm(),             // andi
             _ => state.trap = 3,
         }
 
@@ -309,14 +309,14 @@ impl Instruction for SHIFTI {
         let inst = unsafe { inst.R }; // fun7 is the L/A selector
                                       // rs2 is shamt
         let mut retval = 0;
-        let shamt = inst.rs2();
+        let shamt = inst.rs2() as u32;
         let rs1 = state.x[inst.rs1() as usize];
 
         match inst.funct3() {
-            0b001 => retval = rs1 << shamt, //slli
+            0b001 => retval = rs1.wrapping_shl(shamt), //slli
             0b101 => match inst.funct7() {
-                0b0000000 => retval = rs1 >> shamt,                   // srli
-                0b0100000 => retval = ((rs1 as i32) >> shamt) as u32, // srai
+                0b0000000 => retval = rs1.wrapping_shr(shamt), // srli
+                0b0100000 => retval = (rs1 as i32).wrapping_shr(shamt) as u32, // srai
                 _ => state.trap = 3,
             },
             _ => state.trap = 3,
@@ -348,17 +348,17 @@ impl Instruction for OP {
 
         match inst.funct3() {
             0b000 => match inst.funct7() {
-                0b0000000 => retval = rs1 + rs2, // add
-                0b0100000 => retval = rs1 - rs2, // sub
+                0b0000000 => retval = rs1.wrapping_add(rs2), // add
+                0b0100000 => retval = rs1.wrapping_sub(rs2), // sub
                 _ => state.trap = 3,
             },
-            0b001 => retval = rs1 << (rs2 & 0x1F), // sll
+            0b001 => retval = rs1.wrapping_shl(rs2 & 0x1F), // sll
             0b010 => retval = ((rs1 as i32) < (rs2 as i32)) as u32, // slt
             0b011 => retval = ((rs1 as u32) < (rs2 as u32)) as u32, // sltu
-            0b100 => retval = rs1 ^ rs2, // xor
+            0b100 => retval = rs1 ^ rs2,                    // xor
             0b101 => match inst.funct7() {
-                0b0000000 => retval = rs1 >> (rs2 & 0x1F), // srl
-                0b0100000 => retval = ((rs1 as i32) >> (rs2 & 0x1F)) as u32, // sra
+                0b0000000 => retval = rs1.wrapping_shr(rs2 & 0x1F), // srl
+                0b0100000 => retval = ((rs1 as i32).wrapping_shr(rs2 & 0x1F)) as u32, // sra
                 _ => state.trap = 3,
             },
             0b110 => retval = rs1 | rs2, // or

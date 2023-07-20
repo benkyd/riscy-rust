@@ -1,58 +1,35 @@
 
-c_test:     file format elf64-littleriscv
+c_test:     file format elf32-littleriscv
 
 
 Disassembly of section .text:
 
-0000000000000000 <main>:
-   0:	ff010113          	addi	sp,sp,-16
-   4:	00113423          	sd	ra,8(sp)
-   8:	00813023          	sd	s0,0(sp)
-   c:	01010413          	addi	s0,sp,16
-  10:	00a00513          	addi	a0,zero,10
-  14:	01c000ef          	jal	ra,30 <fib>
-  18:	00050793          	addi	a5,a0,0
-  1c:	00078513          	addi	a0,a5,0
-  20:	00813083          	ld	ra,8(sp)
-  24:	00013403          	ld	s0,0(sp)
-  28:	01010113          	addi	sp,sp,16
-  2c:	00008067          	jalr	zero,0(ra)
-
-0000000000000030 <fib>:
-  30:	fd010113          	addi	sp,sp,-48
-  34:	02113423          	sd	ra,40(sp)
-  38:	02813023          	sd	s0,32(sp)
-  3c:	00913c23          	sd	s1,24(sp)
-  40:	03010413          	addi	s0,sp,48
-  44:	00050793          	addi	a5,a0,0
-  48:	fcf42e23          	sw	a5,-36(s0)
-  4c:	fdc42783          	lw	a5,-36(s0)
-  50:	0007879b          	addiw	a5,a5,0
-  54:	00078a63          	beq	a5,zero,68 <fib+0x38>
-  58:	fdc42783          	lw	a5,-36(s0)
-  5c:	0007871b          	addiw	a4,a5,0
-  60:	00100793          	addi	a5,zero,1
-  64:	00f71663          	bne	a4,a5,70 <fib+0x40>
-  68:	fdc42783          	lw	a5,-36(s0)
-  6c:	0400006f          	jal	zero,ac <fib+0x7c>
-  70:	fdc42783          	lw	a5,-36(s0)
-  74:	fff7879b          	addiw	a5,a5,-1
-  78:	0007879b          	addiw	a5,a5,0
-  7c:	00078513          	addi	a0,a5,0
-  80:	fb1ff0ef          	jal	ra,30 <fib>
-  84:	00050793          	addi	a5,a0,0
-  88:	00078493          	addi	s1,a5,0
-  8c:	fdc42783          	lw	a5,-36(s0)
-  90:	ffe7879b          	addiw	a5,a5,-2
-  94:	0007879b          	addiw	a5,a5,0
-  98:	00078513          	addi	a0,a5,0
-  9c:	f95ff0ef          	jal	ra,30 <fib>
-  a0:	00050793          	addi	a5,a0,0
-  a4:	00f487bb          	addw	a5,s1,a5
-  a8:	0007879b          	addiw	a5,a5,0
-  ac:	00078513          	addi	a0,a5,0
-  b0:	02813083          	ld	ra,40(sp)
-  b4:	02013403          	ld	s0,32(sp)
-  b8:	01813483          	ld	s1,24(sp)
-  bc:	03010113          	addi	sp,sp,48
-  c0:	00008067          	jalr	zero,0(ra)
+80000000 <main>:
+80000000:	fe010113          	addi	sp,sp,-32
+80000004:	00812e23          	sw	s0,28(sp)
+80000008:	02010413          	addi	s0,sp,32
+8000000c:	0000d7b7          	lui	a5,0xd
+80000010:	3ad78793          	addi	a5,a5,941 # d3ad <main-0x7fff2c53>
+80000014:	fef42623          	sw	a5,-20(s0)
+80000018:	000017b7          	lui	a5,0x1
+8000001c:	23478793          	addi	a5,a5,564 # 1234 <main-0x7fffedcc>
+80000020:	fef42423          	sw	a5,-24(s0)
+80000024:	fe842783          	lw	a5,-24(s0)
+80000028:	fef42223          	sw	a5,-28(s0)
+8000002c:	fec42783          	lw	a5,-20(s0)
+80000030:	fef42423          	sw	a5,-24(s0)
+80000034:	fe442783          	lw	a5,-28(s0)
+80000038:	fef42623          	sw	a5,-20(s0)
+8000003c:	fec42703          	lw	a4,-20(s0)
+80000040:	fe842783          	lw	a5,-24(s0)
+80000044:	00e7d863          	bge	a5,a4,80000054 <main+0x54>
+80000048:	00100793          	addi	a5,zero,1
+8000004c:	fef42623          	sw	a5,-20(s0)
+80000050:	00c0006f          	jal	zero,8000005c <main+0x5c>
+80000054:	00300793          	addi	a5,zero,3
+80000058:	fef42423          	sw	a5,-24(s0)
+8000005c:	00000793          	addi	a5,zero,0
+80000060:	00078513          	addi	a0,a5,0
+80000064:	01c12403          	lw	s0,28(sp)
+80000068:	02010113          	addi	sp,sp,32
+8000006c:	00008067          	jalr	zero,0(ra)

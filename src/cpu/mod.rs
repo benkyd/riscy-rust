@@ -57,8 +57,9 @@ impl CPU {
 
         self.state.pc = DRAM_BASE as rv32::Word;
         self.state.x[0] = 0x00000000; // x0 is tied to ground
-        self.state.x[2] = ram::DRAM_SIZE as u32; // x2 the addressable
+        self.state.x[2] = DRAM_BASE + ram::DRAM_SIZE as u32; // x2 the stack pointer
         println!("VM > CPU Initialisd with extensions {:?}", self.extensions);
+        self.dump_reg();
     }
 
     pub fn get_pc(&self) -> rv32::Word {
@@ -76,11 +77,12 @@ impl CPU {
             println!("VM > Fetched 0x{:08x}: 0x{:08x}", self.state.pc, inst);
             self.state.x[0] = 0x00000000;
 
+            self.state.pc = self.state.pc + rv32::WORD as u32;
+
             self.instruction_decoder
                 .borrow_mut()
                 .decode_exec_inst(inst, &mut self.state)?;
 
-            self.state.pc = self.state.pc + rv32::WORD as u32;
             self.dump_reg();
         }
         Ok(())

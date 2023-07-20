@@ -1,20 +1,20 @@
 
-c_test:     file format elf64-littleriscv
+c_test:     file format elf32-littleriscv
 
 SYMBOL TABLE:
-0000000000000000 l    d  .text	0000000000000000 .text
-0000000000000000 l    d  .comment	0000000000000000 .comment
-0000000000000000 l    d  .riscv.attributes	0000000000000000 .riscv.attributes
-0000000000000000 l    df *ABS*	0000000000000000 c_test.c
-00000000000018c4 g       *ABS*	0000000000000000 __global_pointer$
-00000000000010c4 g       .text	0000000000000000 __SDATA_BEGIN__
-0000000000000000         *UND*	0000000000000000 _start
-00000000000010c8 g       .text	0000000000000000 __BSS_END__
-00000000000010c4 g       .text	0000000000000000 __bss_start
-0000000000000000 g     F .text	0000000000000030 main
-00000000000010c4 g       .text	0000000000000000 __DATA_BEGIN__
-00000000000010c4 g       .text	0000000000000000 _edata
-00000000000010c8 g       .text	0000000000000000 _end
-0000000000000030 g     F .text	0000000000000094 fib
+80000000 l    d  .text	00000000 .text
+00000000 l    d  .debug_info	00000000 .debug_info
+00000000 l    d  .debug_abbrev	00000000 .debug_abbrev
+00000000 l    d  .debug_aranges	00000000 .debug_aranges
+00000000 l    d  .debug_rnglists	00000000 .debug_rnglists
+00000000 l    d  .debug_line	00000000 .debug_line
+00000000 l    d  .debug_str	00000000 .debug_str
+00000000 l    d  .debug_line_str	00000000 .debug_line_str
+00000000 l    d  .comment	00000000 .comment
+00000000 l    d  .riscv.attributes	00000000 .riscv.attributes
+00000000 l    d  .debug_frame	00000000 .debug_frame
+00000000 l    df *ABS*	00000000 c_test.c
+00000000         *UND*	00000000 _start
+80000000 g     F .text	00000070 main
 
 
