@@ -27,7 +27,6 @@ impl Instruction for LUI {
     }
 
     fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState) {
-        println!("VM > Executing LUI");
         let inst = unsafe { inst.U };
         let val = inst.full_imm() << 12;
         state.x[inst.rd() as usize] = val;
@@ -47,7 +46,6 @@ impl Instruction for AUIPC {
     }
 
     fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState) {
-        println!("VM > Executing AUIPC");
         let inst = unsafe { inst.U };
         let val = inst.full_imm() << 12;
         let pc_add = state.pc.wrapping_add(val);
@@ -69,7 +67,6 @@ impl Instruction for JAL {
     }
 
     fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState) {
-        println!("VM > Executing JAL");
         let inst = unsafe { inst.J };
         let offset = sext(inst.full_imm() << 1, 32);
         let pc = offset.wrapping_add(state.pc);
@@ -93,7 +90,6 @@ impl Instruction for JALR {
     }
 
     fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState) {
-        println!("VM > Executing JALR");
         let inst = unsafe { inst.I };
         let offset = sext(inst.full_imm(), 32);
         let pc = offset.wrapping_add(state.x[inst.rs1() as usize]);
@@ -116,7 +112,6 @@ impl Instruction for BRANCH {
     }
 
     fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState) {
-        println!("VM > Executing BEQ, BNE, BLT, BGE, BLTU, BGEU");
         let inst = unsafe { inst.B };
         let offset = state.pc + (inst.sext_imm() << 1) - 4;
         match inst.funct3() {
@@ -174,7 +169,6 @@ impl Instruction for LOAD {
     }
 
     fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState) {
-        println!("VM > Executing LOAD");
         let inst = unsafe { inst.I };
         let offset = inst.sext_imm();
         let addr = state.x[inst.rs1() as usize].wrapping_add(offset);
@@ -213,7 +207,6 @@ impl Instruction for STORE {
     }
 
     fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState) {
-        println!("VM > Executing STORE");
         let inst = unsafe { inst.S };
         let offset = inst.sext_imm();
         let addr = state.x[inst.rs1() as usize].wrapping_add(offset);
@@ -266,7 +259,6 @@ impl Instruction for IMM {
     }
 
     fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState) {
-        println!("VM > Executing ADDI, SLTI, SLTIU, XORI, ORI, ANDI");
         let inst = unsafe { inst.I };
         let mut retval = 0;
         let rs1 = state.x[inst.rs1() as usize];
@@ -305,7 +297,6 @@ impl Instruction for SHIFTI {
     }
 
     fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState) {
-        println!("VM > Executing SLLI, SRLI, SRAI");
         let inst = unsafe { inst.R }; // fun7 is the L/A selector
                                       // rs2 is shamt
         let mut retval = 0;
@@ -340,7 +331,6 @@ impl Instruction for OP {
     }
 
     fn step(&self, inst: GenInstruction, state: &mut cpu::CPUState) {
-        println!("VM > Executing ADD, SUB, SLI, SLT, SLTU, XOR, SRL, SRA, OR, AND");
         let inst = unsafe { inst.R };
         let mut retval = 0;
         let rs1 = state.x[inst.rs1() as usize];

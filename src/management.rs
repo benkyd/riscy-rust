@@ -1,9 +1,14 @@
 use std::io::{stdin, Write};
 
+use clap::Parser;
+
+#[derive(Debug)]
 pub struct VMAction {
-    action: Action,
+    pub action: Action,
+    pub arg: String,
 }
 
+#[derive(Debug)]
 pub enum Action {
     Load,
     Step,
@@ -11,10 +16,22 @@ pub enum Action {
     Inspect,
     Dump,
     Reg,
+    Quit,
 }
 
 pub struct Management {
     pause: bool,
+}
+
+#[derive(Parser, Debug)]
+#[command(name = "Riscy-Rust, a RV32ima Virtual Machine")]
+#[command(version = "0.1.0")]
+#[command(author = "Ben Kyd <benjaminkyd@gmail>")]
+struct Cli {
+    #[arg(short, long, value_name = "FILE")]
+    load: Option<String>,
+    #[arg(short, long)]
+    run: bool,
 }
 
 impl Management {
@@ -22,11 +39,28 @@ impl Management {
         Management { pause: true }
     }
 
-    pub fn vm_params() -> Vec<VMAction> {
-        vec![VMAction { action: Action::Load }]
+    pub fn vm_params(&self) -> Vec<VMAction> {
+        let cli = Cli::parse();
+        let mut actions = Vec::new();
+
+        match cli.load {
+            Some(file) => actions.push(VMAction {
+                action: Action::Load,
+                arg: file,
+            }),
+            None => (),
+        }
+
+        if cli.run {
+            actions.push(VMAction {
+                action: Action::Run,
+                arg: String::new(),
+            })
+        }
+        actions
     }
 
-    pub fn prompt(&self) -> Action {
+    pub fn prompt(&self) -> VMAction {
         print!("VM >> ");
         std::io::stdout().flush().unwrap();
 
@@ -35,12 +69,33 @@ impl Management {
 
         let mut parts = input.trim().split_whitespace();
         let command = parts.next().unwrap();
-        let args = parts;
+        let mut args = parts;
 
         match command {
-            "load" => Action::Load,
-            "step" => Action::Step,
-            "run" => Action::Run,
+            "load" => VMAction {
+                action: Action::Load,
+                arg: args.next().unwrap().to_string(),
+            },
+            "step" => VMAction {
+                action: Action::Step,
+                arg: String::new(),
+            },
+            "run" => VMAction {
+                action: Action::Run,
+                arg: String::new(),
+            },
+            "quit" | "q" => VMAction {
+                action: Action::Quit,
+                arg: String::new(),
+            },
+            "help" | "h" => {
+                println!("VM > Commands:");
+                println!("VM > load <file> - load a program into memory");
+                println!("VM > step - step through the program");
+                println!("VM > run - run the program");
+                println!("VM > quit - quit the program");
+                self.prompt()
+            }
             _ => {
                 println!("VM > Command {} not found", command);
                 self.prompt()

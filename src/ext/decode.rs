@@ -4,7 +4,10 @@ use super::encoding::{GenInstruction, Instruction};
 use crate::cpu;
 use crate::system::rv32;
 
+use crate::ext::a;
 use crate::ext::i;
+use crate::ext::m;
+use crate::ext::z;
 
 pub struct DecodeCycle {
     extensions: Vec<char>,
@@ -44,6 +47,21 @@ impl DecodeCycle {
             match extension {
                 'i' => {
                     if let Some(()) = enumerate_extension::<i::ExtensionI>(inst, state) {
+                        return Ok(());
+                    }
+                }
+                'a' => {
+                    if let Some(()) = enumerate_extension::<a::ExtensionA>(inst, state) {
+                        return Ok(());
+                    }
+                }
+                'm' => {
+                    if let Some(()) = enumerate_extension::<m::ExtensionM>(inst, state) {
+                        return Ok(());
+                    }
+                }
+                'z' => {
+                    if let Some(()) = enumerate_extension::<z::ExtensionZ>(inst, state) {
                         return Ok(());
                     }
                 }

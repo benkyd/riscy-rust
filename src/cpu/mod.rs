@@ -1,3 +1,5 @@
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use crate::ext::decode;
 use crate::system::bus::*;
 use crate::system::ram;
@@ -31,37 +33,44 @@ pub struct CPUState {
     //
     // We will also not implement all of them, just the ones we need for the Linux
     // TODO: Do all of the CSRs exist on each hart? Or are they per hart?
-    mstatus: rv32::Word, // Machine status reg to disable interrupts
+    pub mstatus: rv32::Word, // Machine status reg to disable interrupts
 
     // Timers
-    cyclel: rv32::Word,   // Lower 32 bits of the cycle counter
-    cycleh: rv32::Word,   // Upper 32 bits of the cycle counter
-    timel: rv32::Word,    // Lower 32 bits of the timer
-    timeh: rv32::Word,    // Upper 32 bits of the timer
-    timecmpl: rv32::Word, // Lower 32 bits of the timer compare register
-    timecmph: rv32::Word, // Upper 32 bits of the timer compare register
+    pub cyclel: rv32::Word,   // Lower 32 bits of the cycle counter
+    pub cycleh: rv32::Word,   // Upper 32 bits of the cycle counter
+    pub timel: rv32::Word,    // Lower 32 bits of the timer
+    pub timeh: rv32::Word,    // Upper 32 bits of the timer
+    pub timecmpl: rv32::Word, // Lower 32 bits of the timer compare register
+    pub timecmph: rv32::Word, // Upper 32 bits of the timer compare register
 
     // Machine Information Registers
-    mvendorid: rv32::Word, // Vendor ID of the hart
-    marchid: rv32::Word,   // Architecture ID of the hart
-    mimpid: rv32::Word,    // Implementation ID of the hart
-    mhartid: rv32::Word,   // Hardware thread ID of the hart
+    pub mvendorid: rv32::Word, // Vendor ID of the hart
+    pub marchid: rv32::Word,   // Architecture ID of the hart
+    pub mimpid: rv32::Word,    // Implementation ID of the hart
+    pub mhartid: rv32::Word,   // Hardware thread ID of the hart
 
     // Machine Trap Stuffs
-    mscratch: rv32::Word, // Scratch register for machine trap handlers
-    mtvec: rv32::Word,    // Address of trap handler
-    mie: rv32::Word,      // Machine interrupt enable
-    mip: rv32::Word,      // Machine interrupt pending
+    pub mscratch: rv32::Word, // Scratch register for machine trap handlers
+    pub mtvec: rv32::Word,    // Address of trap handler
+    pub mie: rv32::Word,      // Machine interrupt enable
+    pub mip: rv32::Word,      // Machine interrupt pending
 
-    mepc: rv32::Word,   // Machine exception program counter
-    mtval: rv32::Word,  // Machine trap value
-    mcause: rv32::Word, // Machine trap cause
+    pub mepc: rv32::Word,   // Machine exception program counter
+    pub mtval: rv32::Word,  // Machine trap value
+    pub mcause: rv32::Word, // Machine trap cause
+
+    // Note: only a few bits are used.  (Machine = 3, User = 0)
+    // Bits 0..1 = privilege.
+    // Bit 2 = WFI (Wait for interrupt)
+    // Bit 3+ = Load/Store reservation LSBs.
+    pub extraflags: rv32::Word,
 }
 
 pub struct CPU {
     state: CPUState,
     instruction_decoder: Rc<RefCell<decode::DecodeCycle>>,
     extensions: Vec<char>,
+    last_it_time: u128,
 }
 
 impl CPU {
@@ -94,9 +103,11 @@ impl CPU {
                 mepc: 0,
                 mtval: 0,
                 mcause: 0,
+                extraflags: 0,
             },
             instruction_decoder,
             extensions,
+            last_it_time: 0,
         }
     }
 
@@ -106,9 +117,19 @@ impl CPU {
         println!("-----------------");
         println!("VM > Initializing CPU");
 
+        self.last_it_time = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_micros();
+
         self.state.pc = DRAM_BASE as rv32::Word;
         self.state.x[0] = 0x00000000; // x0 is tied to ground
-        self.state.x[2] = DRAM_BASE + ram::DRAM_SIZE as u32; // x2 the stack pointer
+        self.state.x[2] = DRAM_BASE + DRAM_SIZE as u32; // x2 the stack pointer
+        self.state.mvendorid = 0x696969; // Vendor ID of the hart
+        self.state.marchid = 0x285700; // Architecture ID of the hart
+        self.state.mimpid = 0; // Implementation ID of the hart
+        self.state.mhartid = 0; // Hardware thread ID of the hart
+
         println!("VM > CPU Initialisd with extensions {:?}", self.extensions);
         self.dump_reg();
     }
@@ -121,33 +142,119 @@ impl CPU {
         self.state.bus.borrow_mut().load_32(self.state.pc)
     }
 
-    pub fn step(&mut self) -> Result<(), String> {
+    pub fn step(&mut self, elapsed_micros: u128) -> Result<(), String> {
         // CSR stuff before fetch execute
-        //
+        let new_timer = ((self.state.timel as u128) + elapsed_micros) as rv32::Word;
+        if new_timer > self.state.timel {
+            self.state.timeh += 1;
+        }
+        self.state.timel = new_timer;
 
-        // TODO: We can execute multiple instructions per cycle
-        let inst = self.fetch();
-        println!("VM > Fetched 0x{:08x}: 0x{:08x}", self.state.pc, inst);
-        self.state.x[0] = 0x00000000;
+        // handle time interrupt
+        if self.state.timel >= self.state.timecmpl
+            && self.state.timeh <= self.state.timecmph
+            && (self.state.timecmpl, self.state.timecmph) != (0, 0)
+        {
+            self.state.extraflags &= !4;
+            self.state.mip |= 1 << 7; // https://stackoverflow.com/a/61916199/2926815  Fire interrupt.
+        } else {
+            self.state.mip &= !(1 << 7);
+        }
 
-        self.state.pc = self.state.pc + rv32::WORD as u32;
+        // if WFI is set, we exit early
+        if self.state.extraflags & 4 != 0 {
+            return Ok(());
+        }
 
-        self.instruction_decoder
-            .borrow_mut()
-            .decode_exec_inst(inst, &mut self.state)?;
+        let mut trap: rv32::Word = 0;
+        let mut rval: rv32::Word = 0;
+        let cycle: rv32::Word = self.state.cyclel;
+
+        if (self.state.mip & (1 << 7) != 0)
+            && (self.state.mie & (1 << 7) != 0/*mtie*/)
+            && (self.state.mstatus & 0x8 /*mie*/ != 0)
+        {
+            // stall
+            trap = 0x80000007;
+            self.state.pc = self.state.pc - rv32::WORD as u32;
+        } else {
+            // TODO: We can execute multiple instructions per cycle
+
+            // fetch
+            let inst = self.fetch();
+            println!("VM > Fetched 0x{:08x}: 0x{:08x}", self.state.pc, inst);
+            self.state.x[0] = 0x00000000;
+
+            // decode and execute
+            self.instruction_decoder
+                .borrow_mut()
+                .decode_exec_inst(inst, &mut self.state)?;
+
+            self.state.pc = self.state.pc + rv32::WORD as u32;
+        }
+
+        // handle trap and interrupt
+        if trap != 0 {
+            if trap & 0x80000000 != 0 {
+                // interrupt
+                self.state.mcause = trap;
+                self.state.mtval = 0;
+                self.state.pc = self.state.pc + rv32::WORD as u32;
+            } else {
+                // trap
+                self.state.mcause = trap - 1;
+                self.state.mtval &= if trap > 5 && trap <= 8 {
+                    rval
+                } else {
+                    self.state.pc
+                };
+            }
+            self.state.mepc = self.state.pc; // the kernel may advance mepc on it's own
+                                             // on an interrupt, the system will move MIE into MPIE
+            self.state.mstatus =
+                (((self.state.mstatus) & 0x08) << 4) | (((self.state.extraflags) & 3) << 11);
+            self.state.pc = self.state.mtvec - rv32::WORD as u32;
+            // enter machine mode
+            self.state.extraflags |= 3;
+            self.state.pc = self.state.pc + rv32::WORD as u32;
+        }
+
+        if self.state.cyclel > cycle {
+            self.state.cycleh += 1;
+        }
+        self.state.cyclel = cycle;
+
+        Ok(())
+    }
+
+    pub fn exec_step(&mut self) -> Result<(), String> {
+        let since_epoch = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards");
+        let us = since_epoch.as_micros();
+        let elapsed = us - self.last_it_time;
+        self.last_it_time += elapsed;
+
+        self.step(elapsed)?;
 
         Ok(())
     }
 
     pub fn exec(&mut self) -> Result<(), String> {
-        while self.state.pc - DRAM_BASE < ram::DRAM_SIZE as u32 {
-            self.step()?;
-            self.dump_reg();
+        while self.state.pc - DRAM_BASE < DRAM_SIZE as u32 {
+            let since_epoch = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("Time went backwards");
+            let us = since_epoch.as_micros();
+            let elapsed = us - self.last_it_time;
+            self.last_it_time += elapsed;
+
+            self.step(elapsed)?;
         }
         Ok(())
     }
 
-    fn dump_reg(&mut self) {
+    pub fn dump_reg(&mut self) {
         println!("VM > Dumping registers");
         println!("   > PC : 0x{:08x}", self.state.pc);
         for i in 0..8 {

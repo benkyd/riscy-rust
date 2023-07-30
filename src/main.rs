@@ -6,11 +6,11 @@ use std::io::BufReader;
 use std::io::Read;
 use std::{cell::RefCell, rc::Rc};
 
-mod management;
 mod cpu;
 mod err;
 mod ext;
 mod helpers;
+mod management;
 mod system;
 
 use crate::cpu::*;
@@ -21,12 +21,11 @@ struct VMRV32I {
     bus: Rc<RefCell<bus::Bus>>,
     cpu: cpu::CPU,
     instruction_decoder: Rc<RefCell<decode::DecodeCycle>>,
-    manager: management::Management,
 }
 
 impl VMRV32I {
     fn new() -> VMRV32I {
-        let extensions = vec!['i'];
+        let extensions = vec!['i', 'm', 'a', 'z'];
 
         let bus = Rc::new(RefCell::new(bus::Bus::new()));
         let instruction_decoder =
@@ -42,7 +41,6 @@ impl VMRV32I {
             cpu,
             bus,
             instruction_decoder,
-            manager: management::Management::new(),
         }
     }
 
@@ -67,6 +65,10 @@ impl VMRV32I {
         buffer.len() as u32
     }
 
+    fn has_load_prog(&self) -> bool {
+        self.bus.borrow_mut().load_32(bus::DRAM_BASE) != 0
+    }
+
     fn dump_prog(&mut self, size: u32) {
         println!("VM > Dumping program (virtual addresses)");
         for i in 0..size {
@@ -81,7 +83,16 @@ impl VMRV32I {
     }
 
     fn dump_relavent_memory(&self) {
-        println!("");
+        println!("VM > Dumping relavent memory");
+    }
+
+    fn dispatch_step(&mut self) {
+        match self.cpu.exec_step() {
+            Ok(_) => (),
+            Err(e) => println!("VM > Program exited violently with error: {}", e),
+        }
+
+        self.cpu.dump_reg();
     }
 
     fn dispatch(&mut self) {
@@ -90,20 +101,78 @@ impl VMRV32I {
             Err(e) => println!("VM > Program exited violently with error: {}", e),
         }
 
-        loop {
-            println!("VM > CPU has stalled");
-            std::thread::sleep(std::time::Duration::from_secs(10));
-        }
+        self.cpu.dump_reg();
+
+        println!("VM > CPU has stalled");
     }
 }
 
 fn main() {
-    println!("VM Starting Up");
-    println!("VM Loading CPU Management Engine");
+    println!("VM > Loading CPU Management Engine");
+    let manager = management::Management::new();
+    println!("VM > Starting Up");
     let mut vm = VMRV32I::new();
-    vm.manager.prompt();
 
-    let size = vm.load_prog("./test/test.bin");
-    vm.dump_prog(size);
-    vm.dispatch();
+    let mut should_run = false;
+    manager
+        .vm_params()
+        .iter()
+        .for_each(|action| match action.action {
+            management::Action::Load => {
+                println!("VM > Loading file: {}", action.arg);
+                vm.load_prog(&action.arg);
+            }
+            management::Action::Run => {
+                println!("VM > Running program");
+                should_run = true;
+            }
+            _ => (),
+        });
+
+    if should_run && vm.has_load_prog() {
+        vm.dispatch();
+        vm.dump_relavent_memory();
+        return;
+    } else if should_run {
+        println!("VM > CPU has stalled");
+        return;
+    }
+
+    println!("VM > No program loaded");
+
+    // event loop for interactive mode
+    loop {
+        let action = manager.prompt();
+        match action.action {
+            management::Action::Load => {
+                println!("VM > Loading file: {}", action.arg);
+                vm.load_prog(&action.arg);
+            }
+            management::Action::Run => {
+                println!("VM > Running program");
+                if !vm.has_load_prog() {
+                    println!("VM > No program loaded");
+                    continue;
+                }
+                vm.dispatch();
+            }
+            management::Action::Step => {
+                println!("VM > Stepping program");
+                if !vm.has_load_prog() {
+                    println!("VM > No program loaded");
+                    continue;
+                }
+                vm.dispatch_step();
+            }
+            management::Action::Dump => {
+                println!("VM > Dumping program");
+                vm.dump_prog(0x100);
+            }
+            management::Action::Quit => {
+                println!("VM > Quitting");
+                break;
+            }
+            _ => (),
+        }
+    }
 }

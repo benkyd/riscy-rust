@@ -159,3 +159,4 @@ pub union GenInstruction {
     pub U: std::mem::ManuallyDrop<UType>,
     pub J: std::mem::ManuallyDrop<JType>,
 }
+

@@ -10,15 +10,21 @@ use crate::ext::encoding::ImmediateMode;
 use crate::helpers::sext;
 use crate::system::rv32;
 
+// ZiCSR - Control and Status Register Instructions
+// WILL ALSO MATCH ZIENCEI INSTRUCTIONS
+// ALTHOUGH THEY ARE NOT IMPLEMENTED YET
+
 // FOR BRANCH INSTRUCTIONS ITS IMPERATIVE TO REMEMBER
 // THAT WE INCREMENT PC AFTER THE EXECUTION
 
 #[derive(Default, Copy, Clone)]
-pub struct MULW; // MULW rd, rs1, rs2 - Multiply Word
-                 // Multiply rs1 and rs2 and store the lower 32 bits in rd
-impl Instruction for MULW {
+pub struct CSRRW; // CSRRW rd, rs1, csr - Atomic Read/Write CSR
+                  // Read the CSR into rd, then write rs1 into the CSR
+                  // rd = csr
+                  // csr = rs1
+impl Instruction for CSRRW {
     fn name(&self) -> &'static str {
-        "MULW"
+        "CSRRW"
     }
 
     fn match_inst(&self, inst: rv32::Word) -> bool {
@@ -34,7 +40,7 @@ impl Instruction for MULW {
 
 #[derive(EnumIter)]
 #[enum_dispatch(Instruction)]
-pub enum ExtensionM {
-    MULW(MULW),
+pub enum ExtensionZ {
+    CSRRW(CSRRW),
 }
 
